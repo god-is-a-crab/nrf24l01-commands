@@ -33,19 +33,19 @@ pub enum Address {
 #[bitfield(u8)]
 pub struct Config {
     #[bits(1)]
-    prim_rx: bool,
+    pub prim_rx: bool,
     #[bits(1)]
-    pwr_up: bool,
+    pub pwr_up: bool,
     #[bits(1)]
-    crco: bool,
+    pub crco: bool,
     #[bits(1, default = true)]
-    en_crc: bool,
+    pub en_crc: bool,
     #[bits(1)]
-    mask_max_rt: bool,
+    pub mask_max_rt: bool,
     #[bits(1)]
-    mask_tx_ds: bool,
+    pub mask_tx_ds: bool,
     #[bits(1)]
-    mask_rx_dr: bool,
+    pub mask_rx_dr: bool,
     #[bits(1)]
     __: bool,
 }
@@ -53,17 +53,17 @@ pub struct Config {
 #[bitfield(u8)]
 pub struct EnAa {
     #[bits(1, default = true)]
-    en_aa_p0: bool,
+    pub en_aa_p0: bool,
     #[bits(1, default = true)]
-    en_aa_p1: bool,
+    pub en_aa_p1: bool,
     #[bits(1, default = true)]
-    en_aa_p2: bool,
+    pub en_aa_p2: bool,
     #[bits(1, default = true)]
-    en_aa_p3: bool,
+    pub en_aa_p3: bool,
     #[bits(1, default = true)]
-    en_aa_p4: bool,
+    pub en_aa_p4: bool,
     #[bits(1, default = true)]
-    en_aa_p5: bool,
+    pub en_aa_p5: bool,
     #[bits(2)]
     __: u8,
 }
@@ -71,17 +71,17 @@ pub struct EnAa {
 #[bitfield(u8)]
 pub struct EnRxaddr {
     #[bits(1, default = true)]
-    erx_p0: bool,
+    pub erx_p0: bool,
     #[bits(1, default = true)]
-    erx_p1: bool,
+    pub erx_p1: bool,
     #[bits(1)]
-    erx_p2: bool,
+    pub erx_p2: bool,
     #[bits(1)]
-    erx_p3: bool,
+    pub erx_p3: bool,
     #[bits(1)]
-    erx_p4: bool,
+    pub erx_p4: bool,
     #[bits(1)]
-    erx_p5: bool,
+    pub erx_p5: bool,
     #[bits(2)]
     __: u8,
 }
@@ -89,7 +89,7 @@ pub struct EnRxaddr {
 #[bitfield(u8)]
 pub struct SetupAw {
     #[bits(2, default = 3)]
-    aw: u8,
+    pub aw: u8,
     #[bits(6)]
     __: u8,
 }
@@ -97,15 +97,15 @@ pub struct SetupAw {
 #[bitfield(u8)]
 pub struct SetupRetr {
     #[bits(4, default = 3)]
-    arc: u8,
+    pub arc: u8,
     #[bits(4)]
-    ard: u8,
+    pub ard: u8,
 }
 
 #[bitfield(u8)]
 pub struct RfCh {
     #[bits(7, default = 2)]
-    rf_ch: u8,
+    pub rf_ch: u8,
     #[bits(1)]
     __: bool,
 }
@@ -113,13 +113,13 @@ pub struct RfCh {
 #[bitfield(u8)]
 pub struct RfSetup {
     #[bits(1, default = true)]
-    lna_hcurr: bool,
+    pub lna_hcurr: bool,
     #[bits(2, default = 3)]
-    rf_pwr: u8,
+    pub rf_pwr: u8,
     #[bits(1, default = true)]
-    rf_dr: bool,
+    pub rf_dr: bool,
     #[bits(1)]
-    pll_lock: bool,
+    pub pll_lock: bool,
     #[bits(3)]
     __: u8,
 }
@@ -127,15 +127,15 @@ pub struct RfSetup {
 #[bitfield(u8)]
 pub struct Status {
     #[bits(1, access = RO)]
-    tx_full: bool,
+    pub tx_full: bool,
     #[bits(3, default = 7, access = RO)]
-    rx_p_no: u8,
+    pub rx_p_no: u8,
     #[bits(1)]
-    max_rt: bool,
+    pub max_rt: bool,
     #[bits(1)]
-    tx_ds: bool,
+    pub tx_ds: bool,
     #[bits(1)]
-    rx_dr: bool,
+    pub rx_dr: bool,
     #[bits(1)]
     __: bool,
 }
@@ -143,15 +143,15 @@ pub struct Status {
 #[bitfield(u8)]
 pub struct ObserveTx {
     #[bits(4, access = RO)]
-    arc_cnt: u8,
+    pub arc_cnt: u8,
     #[bits(4, access = RO)]
-    plos_cnt: u8,
+    pub plos_cnt: u8,
 }
 
 #[bitfield(u64)]
 pub struct RxAddrP0 {
     #[bits(40, default = 0xE7E7E7E7E7)]
-    rx_addr_p0: u64,
+    pub rx_addr_p0: u64,
     #[bits(24)]
     __: u32,
 }
@@ -165,7 +165,7 @@ impl RxAddrP0 {
 #[bitfield(u64)]
 pub struct RxAddrP1 {
     #[bits(40, default = 0xC2C2C2C2C2)]
-    rx_addr_p1: u64,
+    pub rx_addr_p1: u64,
     #[bits(24)]
     __: u32,
 }
@@ -179,7 +179,7 @@ impl RxAddrP1 {
 #[bitfield(u64)]
 pub struct TxAddr {
     #[bits(40, default = 0xE7E7E7E7E7)]
-    tx_addr: u64,
+    pub tx_addr: u64,
     #[bits(24)]
     __: u32,
 }
@@ -187,7 +187,7 @@ pub struct TxAddr {
 #[bitfield(u8)]
 pub struct RxPwP0 {
     #[bits(6)]
-    rx_pw_p0: u8,
+    pub rx_pw_p0: u8,
     #[bits(2)]
     __: u8,
 }
@@ -195,7 +195,7 @@ pub struct RxPwP0 {
 #[bitfield(u8)]
 pub struct RxPwP1 {
     #[bits(6)]
-    rx_pw_p1: u8,
+    pub rx_pw_p1: u8,
     #[bits(2)]
     __: u8,
 }
@@ -203,7 +203,7 @@ pub struct RxPwP1 {
 #[bitfield(u8)]
 pub struct RxPwP2 {
     #[bits(6)]
-    rx_pw_p2: u8,
+    pub rx_pw_p2: u8,
     #[bits(2)]
     __: u8,
 }
@@ -211,7 +211,7 @@ pub struct RxPwP2 {
 #[bitfield(u8)]
 pub struct RxPwP3 {
     #[bits(6)]
-    rx_pw_p3: u8,
+    pub rx_pw_p3: u8,
     #[bits(2)]
     __: u8,
 }
@@ -219,7 +219,7 @@ pub struct RxPwP3 {
 #[bitfield(u8)]
 pub struct RxPwP4 {
     #[bits(6)]
-    rx_pw_p4: u8,
+    pub rx_pw_p4: u8,
     #[bits(2)]
     __: u8,
 }
@@ -227,7 +227,7 @@ pub struct RxPwP4 {
 #[bitfield(u8)]
 pub struct RxPwP5 {
     #[bits(6)]
-    rx_pw_p5: u8,
+    pub rx_pw_p5: u8,
     #[bits(2)]
     __: u8,
 }
@@ -235,17 +235,17 @@ pub struct RxPwP5 {
 #[bitfield(u8)]
 pub struct FifoStatus {
     #[bits(1, access = RO)]
-    rx_empty: bool,
+    pub rx_empty: bool,
     #[bits(1, access = RO)]
-    rx_full: bool,
+    pub rx_full: bool,
     #[bits(2)]
     __: u8,
     #[bits(1, access = RO)]
-    tx_empty: bool,
+    pub tx_empty: bool,
     #[bits(1, access = RO)]
-    tx_full: bool,
+    pub tx_full: bool,
     #[bits(1, access = RO)]
-    tx_reuse: bool,
+    pub tx_reuse: bool,
     #[bits(1)]
     __: bool,
 }
@@ -253,17 +253,17 @@ pub struct FifoStatus {
 #[bitfield(u8)]
 pub struct Dynpd {
     #[bits(1)]
-    dpl_p0: bool,
+    pub dpl_p0: bool,
     #[bits(1)]
-    dpl_p1: bool,
+    pub dpl_p1: bool,
     #[bits(1)]
-    dpl_p2: bool,
+    pub dpl_p2: bool,
     #[bits(1)]
-    dpl_p3: bool,
+    pub dpl_p3: bool,
     #[bits(1)]
-    dpl_p4: bool,
+    pub dpl_p4: bool,
     #[bits(1)]
-    dpl_p5: bool,
+    pub dpl_p5: bool,
     #[bits(2)]
     __: u8,
 }
@@ -271,11 +271,11 @@ pub struct Dynpd {
 #[bitfield(u8)]
 pub struct Feature {
     #[bits(1)]
-    en_dyn_ack: bool,
+    pub en_dyn_ack: bool,
     #[bits(1)]
-    en_ack_pay: bool,
+    pub en_ack_pay: bool,
     #[bits(1)]
-    en_dpl: bool,
+    pub en_dpl: bool,
     #[bits(5)]
     __: u8,
 }
