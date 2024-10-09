@@ -7,16 +7,16 @@ pub trait Command {
 
 pub struct ReadRegister<R>(PhantomData<R>);
 pub struct WriteRegister<R>(pub R);
-pub struct ReadRxPayload {}
-pub struct WriteTxPayload {}
-pub struct FlushTx {}
-pub struct FlushRx {}
-pub struct ReuseTxPayload {}
-pub struct Activate {}
-pub struct ReadRxPayloadWidth {}
+pub struct ReadRxPayload();
+pub struct WriteTxPayload();
+pub struct FlushTx();
+pub struct FlushRx();
+pub struct ReuseTxPayload();
+pub struct Activate();
+pub struct ReadRxPayloadWidth();
 pub struct WriteAckPayload(pub u8);
-pub struct WriteTxPayloadNoAck {}
-pub struct Nop {}
+pub struct WriteTxPayloadNoAck();
+pub struct Nop();
 
 impl<R> Command for ReadRegister<R> {
     const WORD: u8 = 0;
@@ -55,9 +55,259 @@ impl Command for Nop {
     const WORD: u8 = 0b1111_1111;
 }
 
-impl<R: Register> ReadRegister<R> {
+impl ReadRegister<registers::Config> {
     pub const fn word() -> u8 {
-        Self::WORD | R::ADDRESS
+        Self::WORD | registers::Config::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::EnAa> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::EnAa::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::EnRxaddr> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::EnRxaddr::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::SetupAw> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::SetupAw::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::SetupRetr> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::SetupRetr::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RfCh> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RfCh::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RfSetup> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RfSetup::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::Status> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::Status::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::ObserveTx> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::ObserveTx::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::Cd> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::Cd::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP0> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP0::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 6] {
+        [Self::word(), 0, 0, 0, 0, 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP1> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP1::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 6] {
+        [Self::word(), 0, 0, 0, 0, 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP2> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP2::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP3> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP3::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP4> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP4::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxAddrP5> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxAddrP5::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::TxAddr> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::TxAddr::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 6] {
+        [Self::word(), 0, 0, 0, 0, 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP0> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP0::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP1> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP1::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP2> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP2::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP3> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP3::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP4> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP4::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::RxPwP5> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::RxPwP5::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::FifoStatus> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::FifoStatus::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::Dynpd> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::Dynpd::ADDRESS
+    }
+
+    pub const fn bytes() -> [u8; 2] {
+        [Self::word(), 0]
+    }
+}
+
+impl ReadRegister<registers::Feature> {
+    pub const fn word() -> u8 {
+        Self::WORD | registers::Feature::ADDRESS
     }
 
     pub const fn bytes() -> [u8; 2] {
@@ -196,6 +446,46 @@ impl WriteRegister<registers::RxAddrP1> {
     }
 }
 
+impl WriteRegister<registers::RxAddrP2> {
+    pub const fn word(&self) -> u8 {
+        Self::WORD | registers::RxAddrP2::ADDRESS
+    }
+
+    pub const fn bytes(&self) -> [u8; 2] {
+        [self.word(), self.0.into_bits()]
+    }
+}
+
+impl WriteRegister<registers::RxAddrP3> {
+    pub const fn word(&self) -> u8 {
+        Self::WORD | registers::RxAddrP3::ADDRESS
+    }
+
+    pub const fn bytes(&self) -> [u8; 2] {
+        [self.word(), self.0.into_bits()]
+    }
+}
+
+impl WriteRegister<registers::RxAddrP4> {
+    pub const fn word(&self) -> u8 {
+        Self::WORD | registers::RxAddrP4::ADDRESS
+    }
+
+    pub const fn bytes(&self) -> [u8; 2] {
+        [self.word(), self.0.into_bits()]
+    }
+}
+
+impl WriteRegister<registers::RxAddrP5> {
+    pub const fn word(&self) -> u8 {
+        Self::WORD | registers::RxAddrP5::ADDRESS
+    }
+
+    pub const fn bytes(&self) -> [u8; 2] {
+        [self.word(), self.0.into_bits()]
+    }
+}
+
 impl WriteRegister<registers::TxAddr> {
     pub const fn word(&self) -> u8 {
         Self::WORD | registers::TxAddr::ADDRESS
@@ -293,6 +583,12 @@ impl WriteRegister<registers::Feature> {
 
     pub const fn bytes(&self) -> [u8; 2] {
         [self.word(), self.0.into_bits()]
+    }
+}
+
+impl Activate {
+    pub const fn bytes(&self) -> [u8; 2] {
+        [Self::WORD, 0x73]
     }
 }
 

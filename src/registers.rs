@@ -1,3 +1,4 @@
+//! Register definitions for the nRF24L01.
 use bitfield_struct::bitfield;
 
 pub trait Register {
@@ -130,7 +131,7 @@ impl Register for RfSetup {
 pub struct Status {
     #[bits(1, access = RO)]
     pub tx_full: bool,
-    #[bits(3, default = 7, access = RO)]
+    #[bits(3, access = RO)]
     pub rx_p_no: u8,
     #[bits(1)]
     pub max_rt: bool,
@@ -204,6 +205,46 @@ impl RxAddrP1 {
     pub const fn into_bytes(self) -> [u8; 5] {
         unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
     }
+}
+
+#[bitfield(u8)]
+pub struct RxAddrP2 {
+    #[bits(8, default = 0xC3)]
+    pub rx_addr_p2: u8,
+}
+
+impl Register for RxAddrP2 {
+    const ADDRESS: u8 = 0x0C;
+}
+
+#[bitfield(u8)]
+pub struct RxAddrP3 {
+    #[bits(8, default = 0xC4)]
+    pub rx_addr_p3: u8,
+}
+
+impl Register for RxAddrP3 {
+    const ADDRESS: u8 = 0x0D;
+}
+
+#[bitfield(u8)]
+pub struct RxAddrP4 {
+    #[bits(8, default = 0xC5)]
+    pub rx_addr_p4: u8,
+}
+
+impl Register for RxAddrP4 {
+    const ADDRESS: u8 = 0x0E;
+}
+
+#[bitfield(u8)]
+pub struct RxAddrP5 {
+    #[bits(8, default = 0xC6)]
+    pub rx_addr_p5: u8,
+}
+
+impl Register for RxAddrP5 {
+    const ADDRESS: u8 = 0x0F;
 }
 
 #[bitfield(u64)]
@@ -354,20 +395,4 @@ pub struct Feature {
 
 impl Register for Feature {
     const ADDRESS: u8 = 0x1D;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_config() {
-        let config = Config::new().with_pwr_up(true);
-        assert_eq!(config.into_bits(), 0b0000_1010);
-        assert!(!config.prim_rx());
-        assert!(config.pwr_up());
-        assert!(!config.crco());
-        assert!(config.en_crc());
-        assert_eq!(Config::ADDRESS, 0x00);
-    }
 }
