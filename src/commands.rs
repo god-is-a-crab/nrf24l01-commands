@@ -415,7 +415,7 @@ impl WriteRegister<registers::Cd> {
     }
 }
 
-const fn concat_word_data(word: u8, data: [u8; 5]) -> [u8; 6] {
+const fn concat_word_addr(word: u8, data: [u8; 5]) -> [u8; 6] {
     let mut bytes: [u8; 6] = [0; 6];
     bytes[0] = word;
     let mut i = 1;
@@ -432,7 +432,7 @@ impl WriteRegister<registers::RxAddrP0> {
     }
 
     pub const fn bytes(&self) -> [u8; 6] {
-        concat_word_data(self.word(), self.0.into_bytes())
+        concat_word_addr(self.word(), self.0.into_bytes())
     }
 }
 
@@ -442,7 +442,7 @@ impl WriteRegister<registers::RxAddrP1> {
     }
 
     pub const fn bytes(&self) -> [u8; 6] {
-        concat_word_data(self.word(), self.0.into_bytes())
+        concat_word_addr(self.word(), self.0.into_bytes())
     }
 }
 
@@ -492,7 +492,7 @@ impl WriteRegister<registers::TxAddr> {
     }
 
     pub const fn bytes(&self) -> [u8; 6] {
-        concat_word_data(self.word(), self.0.into_bytes())
+        concat_word_addr(self.word(), self.0.into_bytes())
     }
 }
 
@@ -586,9 +586,49 @@ impl WriteRegister<registers::Feature> {
     }
 }
 
+impl ReadRxPayload {
+    pub const fn bytes<const N: usize>() -> [u8; N + 1] {
+        let mut bytes: [u8; N + 1] = [0; N + 1];
+        bytes[0] = Self::WORD;
+        bytes
+    }
+}
+
+const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8; N + 1] {
+    let mut bytes: [u8; N + 1] = [0; N + 1];
+    bytes[0] = word;
+    // Reverse payload byte-order
+    let mut bytes_idx = 1;
+    let mut payload_idx = N - 1;
+    while bytes_idx < N + 1 {
+        bytes[bytes_idx] = payload[payload_idx];
+        bytes_idx += 1;
+        payload_idx = payload_idx.saturating_sub(1);
+    }
+    bytes
+}
+
+impl WriteTxPayload {
+    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD, payload)
+    }
+}
+
 impl Activate {
     pub const fn bytes(&self) -> [u8; 2] {
         [Self::WORD, 0x73]
+    }
+}
+
+impl ReadRxPayloadWidth {
+    pub const fn bytes() -> [u8; 2] {
+        [Self::WORD, 0]
+    }
+}
+
+impl WriteTxPayloadNoAck {
+    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD, payload)
     }
 }
 

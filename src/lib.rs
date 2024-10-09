@@ -1,4 +1,6 @@
 #![no_std]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 
 pub mod commands;
 pub mod registers;
@@ -42,6 +44,26 @@ mod tests {
         // Check write command
         let write_reg = commands::WriteRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x05, 48]);
+    }
+
+    #[test]
+    fn test_reg_status() {
+        // Check default
+        let reg = registers::Status::new();
+        assert_eq!(reg.into_bits(), 0);
+        // Check fields
+        let reg = registers::Status::from_bits(0b0010_0110);
+        assert!(!reg.tx_full());
+        assert_eq!(reg.rx_p_no(), 0b011);
+        assert!(!reg.max_rt());
+        assert!(reg.tx_ds());
+        assert!(!reg.rx_dr());
+        // Check read command
+        let read_reg = commands::ReadRegister::<registers::Status>::bytes();
+        assert_eq!(read_reg, [0 | 0x07, 0]);
+        // Check write command
+        let write_reg = commands::WriteRegister(reg).bytes();
+        assert_eq!(write_reg, [0b0010_0000 | 0x07, 0b0010_0110]);
     }
 
     #[test]
@@ -105,6 +127,12 @@ mod tests {
     fn test_cmd_activate() {
         let command = commands::Activate();
         assert_eq!(command.bytes(), [0b0101_0000, 0x73]);
+    }
+
+    #[test]
+    fn test_cmd_write_tx_payload_no_ack() {
+        let bytes = commands::WriteTxPayloadNoAck::bytes([b'H', b'e', b'l', b'l', b'o']);
+        assert_eq!(bytes, [0b1011_0000, b'o', b'l', b'l', b'e', b'H']);
     }
 
     #[test]
