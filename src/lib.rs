@@ -125,8 +125,7 @@ mod tests {
 
     #[test]
     fn test_cmd_activate() {
-        let command = commands::Activate();
-        assert_eq!(command.bytes(), [0b0101_0000, 0x73]);
+        assert_eq!(commands::Activate::bytes(), [0b0101_0000, 0x73]);
     }
 
     #[test]

@@ -615,7 +615,7 @@ impl WriteTxPayload {
 }
 
 impl Activate {
-    pub const fn bytes(&self) -> [u8; 2] {
+    pub const fn bytes() -> [u8; 2] {
         [Self::WORD, 0x73]
     }
 }
