@@ -1,33 +1,7 @@
 use bitfield_struct::bitfield;
 
-#[repr(u8)]
-pub enum Address {
-    Config = 0x00,
-    EnAa = 0x01,
-    EnRxaddr = 0x02,
-    SetupAw = 0x03,
-    SetupRetr = 0x04,
-    RfCh = 0x05,
-    RfSetup = 0x06,
-    Status = 0x07,
-    ObserveTx = 0x08,
-    Cd = 0x09,
-    RxAddrP0 = 0x0A,
-    RxAddrP1 = 0x0B,
-    RxAddrP2 = 0x0C,
-    RxAddrP3 = 0x0D,
-    RxAddrP4 = 0x0E,
-    RxAddrP5 = 0x0F,
-    TxAddr = 0x10,
-    RxPwP0 = 0x11,
-    RxPwP1 = 0x12,
-    RxPwP2 = 0x13,
-    RxPwP3 = 0x14,
-    RxPwP4 = 0x15,
-    RxPwP5 = 0x16,
-    FifoStatus = 0x17,
-    Dynpd = 0x1C,
-    Feature = 0x1D,
+pub trait Register {
+    const ADDRESS: u8;
 }
 
 #[bitfield(u8)]
@@ -50,6 +24,10 @@ pub struct Config {
     __: bool,
 }
 
+impl Register for Config {
+    const ADDRESS: u8 = 0x00;
+}
+
 #[bitfield(u8)]
 pub struct EnAa {
     #[bits(1, default = true)]
@@ -66,6 +44,10 @@ pub struct EnAa {
     pub en_aa_p5: bool,
     #[bits(2)]
     __: u8,
+}
+
+impl Register for EnAa {
+    const ADDRESS: u8 = 0x01;
 }
 
 #[bitfield(u8)]
@@ -86,12 +68,20 @@ pub struct EnRxaddr {
     __: u8,
 }
 
+impl Register for EnRxaddr {
+    const ADDRESS: u8 = 0x02;
+}
+
 #[bitfield(u8)]
 pub struct SetupAw {
     #[bits(2, default = 3)]
     pub aw: u8,
     #[bits(6)]
     __: u8,
+}
+
+impl Register for SetupAw {
+    const ADDRESS: u8 = 0x03;
 }
 
 #[bitfield(u8)]
@@ -102,12 +92,20 @@ pub struct SetupRetr {
     pub ard: u8,
 }
 
+impl Register for SetupRetr {
+    const ADDRESS: u8 = 0x04;
+}
+
 #[bitfield(u8)]
 pub struct RfCh {
     #[bits(7, default = 2)]
     pub rf_ch: u8,
     #[bits(1)]
     __: bool,
+}
+
+impl Register for RfCh {
+    const ADDRESS: u8 = 0x05;
 }
 
 #[bitfield(u8)]
@@ -122,6 +120,10 @@ pub struct RfSetup {
     pub pll_lock: bool,
     #[bits(3)]
     __: u8,
+}
+
+impl Register for RfSetup {
+    const ADDRESS: u8 = 0x06;
 }
 
 #[bitfield(u8)]
@@ -140,12 +142,32 @@ pub struct Status {
     __: bool,
 }
 
+impl Register for Status {
+    const ADDRESS: u8 = 0x07;
+}
+
 #[bitfield(u8)]
 pub struct ObserveTx {
     #[bits(4, access = RO)]
     pub arc_cnt: u8,
     #[bits(4, access = RO)]
     pub plos_cnt: u8,
+}
+
+impl Register for ObserveTx {
+    const ADDRESS: u8 = 0x08;
+}
+
+#[bitfield(u8)]
+pub struct Cd {
+    #[bits(1, access = RO)]
+    pub cd: bool,
+    #[bits(7)]
+    __: u8,
+}
+
+impl Register for Cd {
+    const ADDRESS: u8 = 0x09;
 }
 
 #[bitfield(u64)]
@@ -156,9 +178,13 @@ pub struct RxAddrP0 {
     __: u32,
 }
 
+impl Register for RxAddrP0 {
+    const ADDRESS: u8 = 0x0A;
+}
+
 impl RxAddrP0 {
-    pub fn as_payload(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes()[..5].as_ptr() as *const [u8; 5]) }
+    pub const fn into_bytes(self) -> [u8; 5] {
+        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
     }
 }
 
@@ -170,9 +196,13 @@ pub struct RxAddrP1 {
     __: u32,
 }
 
+impl Register for RxAddrP1 {
+    const ADDRESS: u8 = 0x0B;
+}
+
 impl RxAddrP1 {
-    pub fn as_payload(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes()[..5].as_ptr() as *const [u8; 5]) }
+    pub const fn into_bytes(self) -> [u8; 5] {
+        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
     }
 }
 
@@ -184,12 +214,26 @@ pub struct TxAddr {
     __: u32,
 }
 
+impl Register for TxAddr {
+    const ADDRESS: u8 = 0x10;
+}
+
+impl TxAddr {
+    pub const fn into_bytes(self) -> [u8; 5] {
+        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
+    }
+}
+
 #[bitfield(u8)]
 pub struct RxPwP0 {
     #[bits(6)]
     pub rx_pw_p0: u8,
     #[bits(2)]
     __: u8,
+}
+
+impl Register for RxPwP0 {
+    const ADDRESS: u8 = 0x11;
 }
 
 #[bitfield(u8)]
@@ -200,12 +244,20 @@ pub struct RxPwP1 {
     __: u8,
 }
 
+impl Register for RxPwP1 {
+    const ADDRESS: u8 = 0x12;
+}
+
 #[bitfield(u8)]
 pub struct RxPwP2 {
     #[bits(6)]
     pub rx_pw_p2: u8,
     #[bits(2)]
     __: u8,
+}
+
+impl Register for RxPwP2 {
+    const ADDRESS: u8 = 0x13;
 }
 
 #[bitfield(u8)]
@@ -216,6 +268,10 @@ pub struct RxPwP3 {
     __: u8,
 }
 
+impl Register for RxPwP3 {
+    const ADDRESS: u8 = 0x14;
+}
+
 #[bitfield(u8)]
 pub struct RxPwP4 {
     #[bits(6)]
@@ -224,12 +280,20 @@ pub struct RxPwP4 {
     __: u8,
 }
 
+impl Register for RxPwP4 {
+    const ADDRESS: u8 = 0x15;
+}
+
 #[bitfield(u8)]
 pub struct RxPwP5 {
     #[bits(6)]
     pub rx_pw_p5: u8,
     #[bits(2)]
     __: u8,
+}
+
+impl Register for RxPwP5 {
+    const ADDRESS: u8 = 0x16;
 }
 
 #[bitfield(u8)]
@@ -250,6 +314,10 @@ pub struct FifoStatus {
     __: bool,
 }
 
+impl Register for FifoStatus {
+    const ADDRESS: u8 = 0x17;
+}
+
 #[bitfield(u8)]
 pub struct Dynpd {
     #[bits(1)]
@@ -268,6 +336,10 @@ pub struct Dynpd {
     __: u8,
 }
 
+impl Register for Dynpd {
+    const ADDRESS: u8 = 0x1C;
+}
+
 #[bitfield(u8)]
 pub struct Feature {
     #[bits(1)]
@@ -280,10 +352,8 @@ pub struct Feature {
     __: u8,
 }
 
-impl TxAddr {
-    pub fn as_payload(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes()[..5].as_ptr() as *const [u8; 5]) }
-    }
+impl Register for Feature {
+    const ADDRESS: u8 = 0x1D;
 }
 
 #[cfg(test)]
@@ -292,17 +362,12 @@ mod tests {
 
     #[test]
     fn test_config() {
-        let config = Config::default().with_pwr_up(true);
-        assert_eq!(config.0, 0b0000_1010);
+        let config = Config::new().with_pwr_up(true);
+        assert_eq!(config.into_bits(), 0b0000_1010);
         assert!(!config.prim_rx());
         assert!(config.pwr_up());
         assert!(!config.crco());
         assert!(config.en_crc());
-    }
-
-    #[test]
-    fn test_tx_addr() {
-        let tx_addr = TxAddr::default().with_tx_addr(0xA2891FFF6A);
-        assert_eq!(tx_addr.as_payload(), [0x6A, 0xFF, 0x1F, 0x89, 0xA2])
+        assert_eq!(Config::ADDRESS, 0x00);
     }
 }
