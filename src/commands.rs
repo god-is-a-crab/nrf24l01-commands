@@ -7,15 +7,18 @@ pub trait Command {
 
 pub struct ReadRegister<R>(PhantomData<R>);
 pub struct WriteRegister<R>(pub R);
-pub struct ReadRxPayload();
-pub struct WriteTxPayload();
+pub struct ReadRxPayload<const N: usize>();
+pub struct WriteTxPayload<const N: usize>(pub [u8; N]);
 pub struct FlushTx();
 pub struct FlushRx();
 pub struct ReuseTxPayload();
 pub struct Activate();
 pub struct ReadRxPayloadWidth();
-pub struct WriteAckPayload(pub u8);
-pub struct WriteTxPayloadNoAck();
+pub struct WriteAckPayload<const N: usize> {
+    pub pipe: u8,
+    pub payload: [u8; N],
+}
+pub struct WriteTxPayloadNoAck<const N: usize>(pub [u8; N]);
 pub struct Nop();
 
 impl<R> Command for ReadRegister<R> {
@@ -24,10 +27,10 @@ impl<R> Command for ReadRegister<R> {
 impl<R> Command for WriteRegister<R> {
     const WORD: u8 = 0b0010_0000;
 }
-impl Command for ReadRxPayload {
+impl<const N: usize> Command for ReadRxPayload<N> {
     const WORD: u8 = 0b0110_0001;
 }
-impl Command for WriteTxPayload {
+impl<const N: usize> Command for WriteTxPayload<N> {
     const WORD: u8 = 0b1010_0000;
 }
 impl Command for FlushTx {
@@ -45,10 +48,10 @@ impl Command for Activate {
 impl Command for ReadRxPayloadWidth {
     const WORD: u8 = 0b0110_0000;
 }
-impl Command for WriteAckPayload {
+impl<const N: usize> Command for WriteAckPayload<N> {
     const WORD: u8 = 0b1010_1000;
 }
-impl Command for WriteTxPayloadNoAck {
+impl<const N: usize> Command for WriteTxPayloadNoAck<N> {
     const WORD: u8 = 0b1011_0000;
 }
 impl Command for Nop {
@@ -415,6 +418,7 @@ impl WriteRegister<registers::Cd> {
     }
 }
 
+#[inline(always)]
 const fn concat_word_addr(word: u8, addr: [u8; 5]) -> [u8; 6] {
     let mut bytes: [u8; 6] = [0; 6];
     bytes[0] = word;
@@ -587,14 +591,15 @@ impl WriteRegister<registers::Feature> {
     }
 }
 
-impl ReadRxPayload {
-    pub const fn bytes<const N: usize>() -> [u8; N + 1] {
+impl<const N: usize> ReadRxPayload<N> {
+    pub const fn bytes() -> [u8; N + 1] {
         let mut bytes: [u8; N + 1] = [0; N + 1];
         bytes[0] = Self::WORD;
         bytes
     }
 }
 
+#[inline(always)]
 const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8; N + 1] {
     let mut bytes: [u8; N + 1] = [0; N + 1];
     bytes[0] = word;
@@ -609,9 +614,9 @@ const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8;
     bytes
 }
 
-impl WriteTxPayload {
-    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
-        concat_word_payload(Self::WORD, payload)
+impl<const N: usize> WriteTxPayload<N> {
+    pub const fn bytes(&self) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD, self.0)
     }
 }
 
@@ -627,14 +632,14 @@ impl ReadRxPayloadWidth {
     }
 }
 
-impl WriteAckPayload {
-    pub const fn word<const N: usize>(&self, payload: [u8; N]) -> [u8; N + 1] {
-        concat_word_payload(Self::WORD | self.0, payload)
+impl<const N: usize> WriteAckPayload<N> {
+    pub const fn word(&self) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD | self.pipe, self.payload)
     }
 }
 
-impl WriteTxPayloadNoAck {
-    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
-        concat_word_payload(Self::WORD, payload)
+impl<const N: usize> WriteTxPayloadNoAck<N> {
+    pub const fn bytes(&self) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD, self.0)
     }
 }

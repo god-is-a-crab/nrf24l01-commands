@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_cmd_write_tx_payload_no_ack() {
-        let bytes = commands::WriteTxPayloadNoAck::bytes([b'H', b'e', b'l', b'l', b'o']);
+        let bytes = commands::WriteTxPayloadNoAck([b'H', b'e', b'l', b'l', b'o']).bytes();
         assert_eq!(bytes, [0b1011_0000, b'o', b'l', b'l', b'e', b'H']);
     }
 
