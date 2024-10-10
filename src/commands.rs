@@ -418,6 +418,7 @@ impl WriteRegister<registers::Cd> {
 const fn concat_word_addr(word: u8, data: [u8; 5]) -> [u8; 6] {
     let mut bytes: [u8; 6] = [0; 6];
     bytes[0] = word;
+    // Data is already in little-endian byte-order
     let mut i = 1;
     while i < 6 {
         bytes[i] = data[i - 1];
@@ -597,7 +598,7 @@ impl ReadRxPayload {
 const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8; N + 1] {
     let mut bytes: [u8; N + 1] = [0; N + 1];
     bytes[0] = word;
-    // Reverse payload byte-order
+    // Reverse payload byte-order to little-endian
     let mut bytes_idx = 1;
     let mut payload_idx = N - 1;
     while bytes_idx < N + 1 {
@@ -626,14 +627,14 @@ impl ReadRxPayloadWidth {
     }
 }
 
-impl WriteTxPayloadNoAck {
-    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
-        concat_word_payload(Self::WORD, payload)
+impl WriteAckPayload {
+    pub const fn word<const N: usize>(&self, payload: [u8; N]) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD | self.0, payload)
     }
 }
 
-impl WriteAckPayload {
-    pub const fn word(&self) -> u8 {
-        Self::WORD | self.0
+impl WriteTxPayloadNoAck {
+    pub const fn bytes<const N: usize>(payload: [u8; N]) -> [u8; N + 1] {
+        concat_word_payload(Self::WORD, payload)
     }
 }

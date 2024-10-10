@@ -185,7 +185,14 @@ impl Register for RxAddrP0 {
 
 impl RxAddrP0 {
     pub const fn into_bytes(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
+        let le_bytes: [u8; 8] = self.0.to_le_bytes();
+        [
+            le_bytes[0],
+            le_bytes[1],
+            le_bytes[2],
+            le_bytes[3],
+            le_bytes[4],
+        ]
     }
 }
 
@@ -203,7 +210,14 @@ impl Register for RxAddrP1 {
 
 impl RxAddrP1 {
     pub const fn into_bytes(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
+        let le_bytes: [u8; 8] = self.0.to_le_bytes();
+        [
+            le_bytes[0],
+            le_bytes[1],
+            le_bytes[2],
+            le_bytes[3],
+            le_bytes[4],
+        ]
     }
 }
 
@@ -261,7 +275,14 @@ impl Register for TxAddr {
 
 impl TxAddr {
     pub const fn into_bytes(self) -> [u8; 5] {
-        unsafe { *(self.0.to_le_bytes().as_ptr() as *const [u8; 5]) }
+        let le_bytes: [u8; 8] = self.0.to_le_bytes();
+        [
+            le_bytes[0],
+            le_bytes[1],
+            le_bytes[2],
+            le_bytes[3],
+            le_bytes[4],
+        ]
     }
 }
 
