@@ -415,13 +415,13 @@ impl WriteRegister<registers::Cd> {
     }
 }
 
-const fn concat_word_addr(word: u8, data: [u8; 5]) -> [u8; 6] {
+const fn concat_word_addr(word: u8, addr: [u8; 5]) -> [u8; 6] {
     let mut bytes: [u8; 6] = [0; 6];
     bytes[0] = word;
-    // Data is already in little-endian byte-order
+    // Addr is already in little-endian byte-order
     let mut i = 1;
     while i < 6 {
-        bytes[i] = data[i - 1];
+        bytes[i] = addr[i - 1];
         i += 1;
     }
     bytes
@@ -604,7 +604,7 @@ const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8;
     while bytes_idx < N + 1 {
         bytes[bytes_idx] = payload[payload_idx];
         bytes_idx += 1;
-        payload_idx = payload_idx.saturating_sub(1);
+        payload_idx = payload_idx.wrapping_sub(1);
     }
     bytes
 }
