@@ -52,18 +52,34 @@ mod tests {
         let reg = registers::Status::new();
         assert_eq!(reg.into_bits(), 0);
         // Check fields
-        let reg = registers::Status::from_bits(0b0010_0110);
+        let mut reg = registers::Status::from_bits(0b0010_0110);
         assert!(!reg.tx_full());
         assert_eq!(reg.rx_p_no(), 0b011);
         assert!(!reg.max_rt());
         assert!(reg.tx_ds());
         assert!(!reg.rx_dr());
+        // Set field
+        reg.set_max_rt(true);
+        assert_eq!(reg.into_bits(), 0b0011_0110);
         // Check read command
         let read_reg = commands::ReadRegister::<registers::Status>::bytes();
         assert_eq!(read_reg, [0 | 0x07, 0]);
         // Check write command
         let write_reg = commands::WriteRegister(reg).bytes();
-        assert_eq!(write_reg, [0b0010_0000 | 0x07, 0b0010_0110]);
+        assert_eq!(write_reg, [0b0010_0000 | 0x07, 0b0011_0110]);
+    }
+
+    #[test]
+    fn test_reg_cd() {
+        // Check default
+        let reg = registers::Cd::new();
+        assert_eq!(reg.into_bits(), 0);
+        // Check fields
+        let reg = registers::Cd::from_bits(1);
+        assert_eq!(reg.into_bits(), 1);
+        // Check read command
+        let read_reg = commands::ReadRegister::<registers::Cd>::bytes();
+        assert_eq!(read_reg, [0 | 0x09, 0]);
     }
 
     #[test]
@@ -102,6 +118,39 @@ mod tests {
             write_reg,
             [0b0010_0000 | 0x10, 0x6A, 0xFF, 0x1F, 0x89, 0xA2]
         );
+    }
+
+    #[test]
+    fn test_reg_rx_pw_p0() {
+        // Check default
+        let reg = registers::RxPwP0::new();
+        assert_eq!(reg.into_bits(), 0);
+        // Check fields
+        let reg = reg.with_rx_pw_p0(32);
+        assert_eq!(reg.into_bits(), 32);
+        // Check read command
+        let read_reg = commands::ReadRegister::<registers::RxPwP0>::bytes();
+        assert_eq!(read_reg, [0 | 0x11, 0]);
+        // Check write command
+        let write_reg = commands::WriteRegister(reg).bytes();
+        assert_eq!(write_reg, [0b0010_0000 | 0x11, 32]);
+    }
+
+    #[test]
+    fn test_reg_fifo_status() {
+        // Check default
+        let reg = registers::FifoStatus::new();
+        assert_eq!(reg.into_bits(), 0);
+        // Check fields
+        let reg = registers::FifoStatus::from_bits(0b0100_0001);
+        assert!(reg.rx_empty());
+        assert!(!reg.rx_full());
+        assert!(!reg.tx_empty());
+        assert!(!reg.tx_full());
+        assert!(reg.tx_reuse());
+        // Check read command
+        let read_reg = commands::ReadRegister::<registers::FifoStatus>::bytes();
+        assert_eq!(read_reg, [0 | 0x17, 0]);
     }
 
     #[test]

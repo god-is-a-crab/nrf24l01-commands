@@ -379,6 +379,13 @@ impl Register for ObserveTx {
 /// Carrier detect register.
 ///
 /// Address = 0x09
+///
+/// ```rust
+/// use nrf24l01_commands::registers;
+///
+/// let reg = registers::Cd::from_bits(1);
+/// assert_eq!(reg.cd(), true);
+/// ```
 #[bitfield(u8, order = Msb)]
 pub struct Cd {
     #[bits(7)]
