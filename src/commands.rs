@@ -1,3 +1,4 @@
+//! SPI commands for the nRF24L01.
 use crate::registers::{self, Register};
 use core::marker::PhantomData;
 

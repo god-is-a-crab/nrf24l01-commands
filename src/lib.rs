@@ -173,6 +173,14 @@ mod tests {
     }
 
     #[test]
+    fn test_read_rx_payload() {
+        let bytes = commands::ReadRxPayload::<32>::bytes();
+        let mut expected_bytes = [0; 33];
+        expected_bytes[0] = 0b0110_0001;
+        assert_eq!(bytes, expected_bytes);
+    }
+
+    #[test]
     fn test_cmd_activate() {
         assert_eq!(commands::Activate::bytes(), [0b0101_0000, 0x73]);
     }
