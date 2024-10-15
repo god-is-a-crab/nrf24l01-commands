@@ -15,15 +15,15 @@ pub trait Register {
 /// ```rust
 /// use nrf24l01_commands::registers;
 ///
-/// let config = registers::Config::new();
-/// assert_eq!(config.into_bits(), 0b0000_1000);
+/// let reg = registers::Config::new();
+/// assert_eq!(reg.into_bits(), 0b0000_1000);
 ///
 /// // Set fields
-/// let config = config
+/// let reg = reg
 ///     .with_prim_rx(false)
 ///     .with_pwr_up(true)
 ///     .with_mask_rx_dr(true);
-/// assert_eq!(config.into_bits(), 0b0100_1010);
+/// assert_eq!(reg.into_bits(), 0b0100_1010);
 /// ```
 #[bitfield(u8, order = Msb)]
 pub struct Config {
@@ -94,6 +94,19 @@ impl Register for Config {
 /// Address = 0x01
 ///
 /// At reset, 'Auto Acknowledgement' is enabled for all pipes.
+///
+/// ```rust
+/// use nrf24l01_commands::registers;
+///
+/// let reg = registers::EnAa::new();
+/// assert_eq!(reg.into_bits(), 0b0011_1111);
+///
+/// // Set fields
+/// let reg = reg
+///     .with_en_aa_p3(false)
+///     .with_en_aa_p5(false);
+/// assert_eq!(reg.into_bits(), 0b0001_0111);
+/// ```
 #[bitfield(u8, order = Msb)]
 pub struct EnAa {
     #[bits(2)]
@@ -127,6 +140,19 @@ impl Register for EnAa {
 /// Address = 0x02
 ///
 /// At reset, pipe 0 and 1 are enabled.
+///
+/// ```rust
+/// use nrf24l01_commands::registers;
+///
+/// let reg = registers::EnRxaddr::new();
+/// assert_eq!(reg.into_bits(), 0b0000_0011);
+///
+/// // Set fields
+/// let reg = reg
+///     .with_erx_p2(true)
+///     .with_erx_p1(false);
+/// assert_eq!(reg.into_bits(), 0b0000_0101);
+/// ```
 #[bitfield(u8, order = Msb)]
 pub struct EnRxaddr {
     #[bits(2)]
