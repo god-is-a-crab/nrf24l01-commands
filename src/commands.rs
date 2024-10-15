@@ -1,24 +1,130 @@
 use crate::registers::{self, Register};
 use core::marker::PhantomData;
 
+/// Defines an nRF24L01 command with a command word.
 pub trait Command {
     const WORD: u8;
 }
 
+/// Read a register.
+///
+/// Type parameter:
+/// - `R`: register type
+/// ```rust
+/// use nrf24l01_commands::{registers, commands};
+/// let bytes = commands::ReadRegister::<registers::FifoStatus>::bytes();
+/// assert_eq!(bytes, [0x17, 0]);
+/// ```
 pub struct ReadRegister<R>(PhantomData<R>);
+
+/// Write a register.
+///
+/// Field 0: register to write
+/// ```rust
+/// use nrf24l01_commands::{registers, commands};
+///
+/// let reg = registers::TxAddr::new().with_tx_addr(0x61DE7C320B);
+/// let bytes = commands::WriteRegister(reg).bytes();
+/// assert_eq!(bytes, [0b0010_0000 | 0x10, 0x0B, 0x32, 0x7C, 0xDE, 0x61]);
+/// ```
 pub struct WriteRegister<R>(pub R);
+
+/// Read RX-payload.
+///
+/// Const parameter:
+/// - `N`: Width of RX payload
+/// ```rust
+/// use nrf24l01_commands::commands;
+///
+/// let bytes = commands::ReadRxPayload::<32>::bytes();
+/// let mut expected_bytes = [0; 33];
+/// expected_bytes[0] = 0b0110_0001;
+/// assert_eq!(bytes, expected_bytes);
+/// ```
 pub struct ReadRxPayload<const N: usize>();
+
+/// Write TX-payload.
+///
+/// Field 0: payload to write
+/// ```rust
+/// use nrf24l01_commands::commands;
+///
+/// let payload = [b'a'; 32];
+/// let bytes = commands::WriteTxPayload(payload).bytes();
+/// let mut expected_bytes = [b'a'; 33];
+/// expected_bytes[0] = 0b1010_0000;
+/// assert_eq!(bytes, expected_bytes);
+/// ```
 pub struct WriteTxPayload<const N: usize>(pub [u8; N]);
+
+/// Flush TX FIFO. Used in TX mode.
 pub struct FlushTx();
+
+/// Flush RX FIFO. Used in RX mode.
 pub struct FlushRx();
+
+/// Reuse last transmitted payload. Packets are repeatedly transmitted as long
+/// as CE is high. TX payload reuse is active until W_TX_PAYLOAD or FLUSH_TX
+/// is executed.
 pub struct ReuseTxPayload();
+
+/// Activate command. Activates the following features:
+/// - R_RX_PL_WID (ReadRxPayloadWidth)
+/// - W_ACK_PAYLOAD (WriteAckPayload)
+/// - W_TX_PAYLOAD_NOACK (WriteTxPayloadNoAck)
+/// ```rust
+/// use nrf24l01_commands::commands;
+///
+/// let bytes = commands::Activate::bytes();
+/// assert_eq!(bytes, [0b0101_0000, 0x73]);
+/// ```
 pub struct Activate();
+
+/// Read RX-payload width for the top payload in RX FIFO.
 pub struct ReadRxPayloadWidth();
+
+/// Write payload to be transmitted with ACK packet on PIPE. Used in RX mode.
+/// Maximum three ACK packet payload can be pending. Payloads with the same PIPE
+/// are handled FIFO. Write payload 1-32 bytes.
+///
+/// Fields:
+/// - `pipe`: data pipe 000 - 101
+/// - `payload`: payload to write
+/// ```rust
+/// use nrf24l01_commands::commands;
+///
+/// let payload = [b'a'; 32];
+/// let bytes = commands::WriteAckPayload{ pipe: 4, payload: payload }.bytes();
+/// let mut expected_bytes = [b'a'; 33];
+/// expected_bytes[0] = 0b1010_1100;
+/// assert_eq!(bytes, expected_bytes);
+/// ```
 pub struct WriteAckPayload<const N: usize> {
     pub pipe: u8,
     pub payload: [u8; N],
 }
+
+/// Write TX-payload with AUTOACK disabled.
+///
+/// Field 0: payload to write
+/// ```rust
+/// use nrf24l01_commands::commands;
+///
+/// let payload = [b'a'; 32];
+/// let bytes = commands::WriteTxPayloadNoAck(payload).bytes();
+/// let mut expected_bytes = [b'a'; 33];
+/// expected_bytes[0] = 0b1011_0000;
+/// assert_eq!(bytes, expected_bytes);
+/// ```
 pub struct WriteTxPayloadNoAck<const N: usize>(pub [u8; N]);
+
+/// Nop command. Used to read the status register.
+/// ```rust
+/// use nrf24l01_commands::commands::{self, Command};
+///
+/// let command_word = commands::Nop::WORD;
+/// assert_eq!(command_word, 0xFF);
+/// ```
 pub struct Nop();
 
 impl<R> Command for ReadRegister<R> {
@@ -633,7 +739,7 @@ impl ReadRxPayloadWidth {
 }
 
 impl<const N: usize> WriteAckPayload<N> {
-    pub const fn word(&self) -> [u8; N + 1] {
+    pub const fn bytes(&self) -> [u8; N + 1] {
         concat_word_payload(Self::WORD | self.pipe, self.payload)
     }
 }
