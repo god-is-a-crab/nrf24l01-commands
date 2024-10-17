@@ -812,6 +812,12 @@ impl<const N: usize> RxAddrP0<N> {
     }
 }
 
+impl<const N: usize> Default for RxAddrP0<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// # RX_ADDR_P1 register
 /// RX address data pipe 1.
 ///
@@ -892,6 +898,12 @@ impl<const N: usize> RxAddrP1<N> {
     /// Convert into bytes ordered by LSByte first.
     pub const fn into_bytes(self) -> [u8; N] {
         address_into_bytes(self.0 .0)
+    }
+}
+
+impl<const N: usize> Default for RxAddrP1<N> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1107,6 +1119,12 @@ impl<const N: usize> TxAddr<N> {
     /// Convert into bytes ordered by LSByte first.
     pub const fn into_bytes(self) -> [u8; N] {
         address_into_bytes(self.0 .0)
+    }
+}
+
+impl<const N: usize> Default for TxAddr<N> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
