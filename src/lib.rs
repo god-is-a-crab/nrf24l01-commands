@@ -7,7 +7,7 @@ pub mod registers;
 
 #[cfg(test)]
 mod tests {
-    use super::{commands, commands::Command, registers};
+    use super::{commands, registers};
 
     #[test]
     fn test_reg_config() {
@@ -23,10 +23,10 @@ mod tests {
             .with_mask_rx_dr(true);
         assert_eq!(reg.into_bits(), 0b0111_0100);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::Config>::bytes();
+        let read_reg = commands::RRegister::<registers::Config>::bytes();
         assert_eq!(read_reg, [0 | 0x00, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x00, 0b0111_0100]);
     }
 
@@ -39,10 +39,10 @@ mod tests {
         let reg = reg.with_rf_ch(48);
         assert_eq!(reg.into_bits(), 48);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::RfCh>::bytes();
+        let read_reg = commands::RRegister::<registers::RfCh>::bytes();
         assert_eq!(read_reg, [0 | 0x05, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x05, 48]);
     }
 
@@ -62,10 +62,10 @@ mod tests {
         reg.set_max_rt(true);
         assert_eq!(reg.into_bits(), 0b0011_0110);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::Status>::bytes();
+        let read_reg = commands::RRegister::<registers::Status>::bytes();
         assert_eq!(read_reg, [0 | 0x07, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x07, 0b0011_0110]);
     }
 
@@ -78,42 +78,39 @@ mod tests {
         let reg = registers::Cd::from_bits(1);
         assert_eq!(reg.into_bits(), 1);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::Cd>::bytes();
+        let read_reg = commands::RRegister::<registers::Cd>::bytes();
         assert_eq!(read_reg, [0 | 0x09, 0]);
     }
 
     #[test]
     fn test_reg_rx_addr_p0() {
         // Check default
-        let reg = registers::RxAddrP0::new();
+        let reg = registers::RxAddrP0::<3>::new();
         assert_eq!(reg.into_bits(), 0xE7E7E7E7E7);
         // Check fields
-        let reg = reg.with_rx_addr_p0(0x17E73A6C58);
+        let reg = registers::RxAddrP0::<4>::new().with_rx_addr_p0(0x17E73A6C58);
         assert_eq!(reg.into_bits(), 0x17E73A6C58);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::RxAddrP0>::bytes();
+        let read_reg = commands::RRegister::<registers::RxAddrP0<5>>::bytes();
         assert_eq!(read_reg, [0 | 0x0A, 0, 0, 0, 0, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
-        assert_eq!(
-            write_reg,
-            [0b0010_0000 | 0x0A, 0x58, 0x6C, 0x3A, 0xE7, 0x17]
-        );
+        let write_reg = commands::WRegister(reg).bytes();
+        assert_eq!(write_reg, [0b0010_0000 | 0x0A, 0x58, 0x6C, 0x3A, 0xE7]);
     }
 
     #[test]
     fn test_reg_tx_addr() {
         // Check default
-        let reg = registers::TxAddr::new();
+        let reg = registers::TxAddr::<5>::new();
         assert_eq!(reg.into_bits(), 0xE7E7E7E7E7);
         // Check fields
-        let reg = reg.with_tx_addr(0xA2891FFF6A);
+        let reg = registers::TxAddr::<5>::new().with_tx_addr(0xA2891FFF6A);
         assert_eq!(reg.into_bits(), 0xA2891FFF6A);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::TxAddr>::bytes();
-        assert_eq!(read_reg, [0 | 0x10, 0, 0, 0, 0, 0]);
+        let read_reg = commands::RRegister::<registers::TxAddr<4>>::bytes();
+        assert_eq!(read_reg, [0 | 0x10, 0, 0, 0, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(
             write_reg,
             [0b0010_0000 | 0x10, 0x6A, 0xFF, 0x1F, 0x89, 0xA2]
@@ -129,10 +126,10 @@ mod tests {
         let reg = reg.with_rx_pw_p0(32);
         assert_eq!(reg.into_bits(), 32);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::RxPwP0>::bytes();
+        let read_reg = commands::RRegister::<registers::RxPwP0>::bytes();
         assert_eq!(read_reg, [0 | 0x11, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x11, 32]);
     }
 
@@ -149,7 +146,7 @@ mod tests {
         assert!(!reg.tx_full());
         assert!(reg.tx_reuse());
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::FifoStatus>::bytes();
+        let read_reg = commands::RRegister::<registers::FifoStatus>::bytes();
         assert_eq!(read_reg, [0 | 0x17, 0]);
     }
 
@@ -165,34 +162,24 @@ mod tests {
             .with_en_dpl(false);
         assert_eq!(reg.into_bits(), 0b0000_0011);
         // Check read command
-        let read_reg = commands::ReadRegister::<registers::Feature>::bytes();
+        let read_reg = commands::RRegister::<registers::Feature>::bytes();
         assert_eq!(read_reg, [0 | 0x1D, 0]);
         // Check write command
-        let write_reg = commands::WriteRegister(reg).bytes();
+        let write_reg = commands::WRegister(reg).bytes();
         assert_eq!(write_reg, [0b0010_0000 | 0x1D, 0b0000_0011]);
     }
 
     #[test]
     fn test_read_rx_payload() {
-        let bytes = commands::ReadRxPayload::<32>::bytes();
+        let bytes = commands::RRxPayload::<32>::bytes();
         let mut expected_bytes = [0; 33];
         expected_bytes[0] = 0b0110_0001;
         assert_eq!(bytes, expected_bytes);
     }
 
     #[test]
-    fn test_cmd_activate() {
-        assert_eq!(commands::Activate::bytes(), [0b0101_0000, 0x73]);
-    }
-
-    #[test]
     fn test_cmd_write_tx_payload_no_ack() {
-        let bytes = commands::WriteTxPayloadNoAck([b'H', b'e', b'l', b'l', b'o']).bytes();
+        let bytes = commands::WTxPayloadNoack([b'H', b'e', b'l', b'l', b'o']).bytes();
         assert_eq!(bytes, [0b1011_0000, b'o', b'l', b'l', b'e', b'H']);
-    }
-
-    #[test]
-    fn test_cmd_nop() {
-        assert_eq!(commands::Nop::WORD, 0xFF);
     }
 }

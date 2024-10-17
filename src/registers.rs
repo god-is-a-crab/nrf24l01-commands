@@ -33,6 +33,7 @@ use bitfield_struct::bitfield;
 
 /// A trait for nRF24L01 registers. Defines the register's address.
 pub trait Register {
+    /// Register address.
     const ADDRESS: u8;
 }
 
@@ -763,6 +764,7 @@ impl<const N: usize> Register for RxAddrP0<N> {
 
 /// Convert u64 address to little-endian bytes.
 /// Const parameter `N`: address width in bytes. Constraint: `N` in {3, 4, 5}.
+#[inline(always)]
 const fn address_into_bytes<const N: usize>(addr: u64) -> [u8; N] {
     let le_bytes: [u8; 8] = addr.to_le_bytes();
     let mut bytes = [0; N];
@@ -1320,8 +1322,8 @@ impl Register for RxPwP5 {
 /// #### `tx_reuse` | bit 6
 /// Reuse last transmitted data packet if set high.
 /// The packet is repeatedly retransmitted as long as CE is high.
-/// TX_REUSE is set by the [`REUSE_TX_PL`][crate::commands::ReuseTxPayload] command and reset by
-/// [`W_TX_PAYLOAD`][crate::commands::WriteTxPayloadNoAck] or [`FLUSH_TX`][crate::commands::FlushTx].
+/// TX_REUSE is set by the [`REUSE_TX_PL`][crate::commands::ReuseTxPl] command and reset by
+/// [`W_TX_PAYLOAD`][crate::commands::WTxPayloadNoack] or [`FLUSH_TX`][crate::commands::FlushTx].
 ///
 /// #### `tx_full` | bit 5
 /// TX FIFO full flag.
