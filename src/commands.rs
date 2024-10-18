@@ -67,7 +67,11 @@ pub struct WRegister<R>(
 /// Read RX payload.
 ///
 /// #### Const Parameter `N`
-/// Width of RX payload. Must be 1 to 32 bytes.
+/// Width of RX payload.
+///
+/// <div class="warning">
+/// Must be 1 to 32 bytes.
+/// </div>
 ///
 /// ## Example
 /// ```rust
@@ -93,7 +97,10 @@ pub struct RRxPayload<const N: usize>();
 /// assert_eq!(bytes, [0b1010_0000, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 /// ```
 pub struct WTxPayload<const N: usize>(
-    /// Payload to write. Payload must be 1 to 32 bytes.
+    /// Payload to write.
+    /// <div class="warning">
+    /// Payload must be 1 to 32 bytes.
+    /// </div>
     pub [u8; N],
 );
 
@@ -176,7 +183,10 @@ pub struct RRxPlWid();
 pub struct WAckPayload<const N: usize> {
     /// Data pipe this ACK payload is designated to.
     pub pipe: u8,
-    /// Payload to send with ACK. Must be 1 - 32 bytes.
+    /// Payload to send with ACK.
+    /// <div class="warning">
+    /// Payload must be 1 to 32 bytes.
+    /// </div>
     pub payload: [u8; N],
 }
 
@@ -192,7 +202,10 @@ pub struct WAckPayload<const N: usize> {
 /// assert_eq!(bytes, [0b1011_0000, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 /// ```
 pub struct WTxPayloadNoack<const N: usize>(
-    /// Payload to write. Payload must be 1 to 32 bytes.
+    /// Payload to write.
+    /// <div class="warning">
+    /// Payload must be 1 to 32 bytes.
+    /// </div>
     pub [u8; N],
 );
 

@@ -720,7 +720,10 @@ impl Register for Cd {
 ///
 /// Address = `0x0A`
 ///
-/// Const parameter `N`: address width in bytes. Constraint: `N` in {3, 4, 5}.
+/// Const parameter `N`: address width in bytes.
+/// <div class="warning">
+/// N must be of {3, 4, 5}.
+/// </div>
 ///
 /// ## Fields
 /// #### `rx_addr_p0` | bits 39:0
@@ -814,7 +817,10 @@ impl<const N: usize> RxAddrP0<N> {
 ///
 /// Address = `0x0B`
 ///
-/// Const parameter `N`: address width in bytes. Constraint: `N` in {3, 4, 5}.
+/// Const parameter `N`: address width in bytes.
+/// <div class="warning">
+/// N must be of {3, 4, 5}.
+/// </div>
 ///
 /// ## Fields
 /// #### `rx_addr_p1` | bits 39:0
@@ -1026,7 +1032,10 @@ impl Register for RxAddrP5 {
 ///
 /// Address = `0x10`
 ///
-/// Const parameter `N`: address width in bytes. Constraint: `N` in {3, 4, 5}.
+/// Const parameter `N`: address width in bytes.
+/// <div class="warning">
+/// N must be of {3, 4, 5}.
+/// </div>
 ///
 /// ## Fields
 /// #### `tx_addr` | bits 39:0
