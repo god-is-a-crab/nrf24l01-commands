@@ -16,11 +16,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Rustfmt
       run: cargo fmt --check
+
     - name: Build
       run: cargo build --release
-    - name: Run tests
+
+    - name: Run tests on debug build
+      run: cargo test
+
+    - name: Run tests on release build
       run: cargo test --release
+
     - name: Clippy
-      run: cargo clippy --release
+      env:
+        RUSTFLAGS: -Dwarnings
+      run: cargo clippy

@@ -1,5 +1,6 @@
-[![](https://img.shields.io/crates/v/nrf24l01-commands.svg)](https://crates.io/crates/nrf24l01-commands)
-[![](https://docs.rs/nrf24l01-commands/badge.svg)](https://docs.rs/nrf24l01-commands)
+[![Latest Version](https://img.shields.io/crates/v/nrf24l01-commands.svg)](https://crates.io/crates/nrf24l01-commands)
+[![Documentation](https://docs.rs/nrf24l01-commands/badge.svg)](https://docs.rs/nrf24l01-commands)
+[![Github Actions](https://github.com/god-is-a-crab/nrf24l01-commands/workflows/Rust/badge.svg)](https://github.com/god-is-a-crab/nrf24l01-commands/actions)
 
 # nRF24L01 Commands
 
