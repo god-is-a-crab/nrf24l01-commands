@@ -1,6 +1,6 @@
 [package]
 name = "nrf24l01-commands"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Jingwei Ni <ni.jingwei.2210@gmail.com>"]
 description = "Register bitfields and commands for the nRF24L01."
