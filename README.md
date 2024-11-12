@@ -43,5 +43,5 @@ use nrf24l01_commands::commands;
 const PAYLOAD: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 // Generate SPI byte sequence
 const SPI_BYTES: [u8; 10] = commands::WTxPayload(PAYLOAD).bytes();
-assert_eq!(SPI_BYTES, [0b1010_0000, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+assert_eq!(SPI_BYTES, [0b1010_0000, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 ```

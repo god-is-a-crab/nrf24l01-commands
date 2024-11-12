@@ -185,6 +185,6 @@ mod tests {
     #[test]
     fn test_cmd_write_tx_payload_no_ack() {
         let bytes = commands::WTxPayloadNoack([b'H', b'e', b'l', b'l', b'o']).bytes();
-        assert_eq!(bytes, [0b1011_0000, b'o', b'l', b'l', b'e', b'H']);
+        assert_eq!(bytes, [0b1011_0000, b'H', b'e', b'l', b'l', b'o']);
     }
 }

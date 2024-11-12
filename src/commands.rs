@@ -86,7 +86,7 @@ pub struct WRegister<R>(
 pub struct RRxPayload<const N: usize>();
 
 /// # W_TX_PAYLOAD command
-/// Write TX payload.
+/// Write TX payload. Payload byte-order is kept as MSByte first contrary to documentation.
 ///
 /// ## Example
 /// ```rust
@@ -94,7 +94,7 @@ pub struct RRxPayload<const N: usize>();
 ///
 /// let payload = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 /// let bytes = commands::WTxPayload(payload).bytes();
-/// assert_eq!(bytes, [0b1010_0000, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+/// assert_eq!(bytes, [0b1010_0000, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 /// ```
 pub struct WTxPayload<const N: usize>(
     /// Payload to write.
@@ -169,7 +169,7 @@ pub struct RRxPlWid();
 /// # W_ACK_PAYLOAD command
 /// Write payload to be transmitted with ACK packet on a data [`pipe`][WAckPayload::pipe]. Used in RX mode.
 /// Maximum three ACK packet payloads can be pending. Payloads with the same [`pipe`][WAckPayload::pipe]
-/// are handled first-in-first-out.
+/// are handled first-in-first-out. Payload byte-order is kept as MSByte first contrary to documentation.
 ///
 /// ## Example
 /// ```rust
@@ -178,7 +178,7 @@ pub struct RRxPlWid();
 /// let pipe = 4;
 /// let payload = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 /// let bytes = commands::WAckPayload { pipe, payload }.bytes();
-/// assert_eq!(bytes, [0b1010_1000 | pipe, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+/// assert_eq!(bytes, [0b1010_1000 | pipe, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 /// ```
 pub struct WAckPayload<const N: usize> {
     /// Data pipe this ACK payload is designated to.
@@ -191,7 +191,7 @@ pub struct WAckPayload<const N: usize> {
 }
 
 /// # W_TX_PAYLOAD_NOACK command
-/// Write TX payload with AUTOACK disabled.
+/// Write TX payload with AUTOACK disabled. Payload byte-order is kept as MSByte first contrary to documentation.
 ///
 /// ## Example
 /// ```rust
@@ -199,7 +199,7 @@ pub struct WAckPayload<const N: usize> {
 ///
 /// let payload = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 /// let bytes = commands::WTxPayloadNoack(payload).bytes();
-/// assert_eq!(bytes, [0b1011_0000, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+/// assert_eq!(bytes, [0b1011_0000, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 /// ```
 pub struct WTxPayloadNoack<const N: usize>(
     /// Payload to write.
@@ -916,13 +916,11 @@ impl<const N: usize> RRxPayload<N> {
 const fn concat_word_payload<const N: usize>(word: u8, payload: [u8; N]) -> [u8; N + 1] {
     let mut bytes: [u8; N + 1] = [0; N + 1];
     bytes[0] = word;
-    // Reverse payload byte-order to little-endian
+
     let mut bytes_idx = 1;
-    let mut payload_idx = N - 1;
     while bytes_idx < N + 1 {
-        bytes[bytes_idx] = payload[payload_idx];
+        bytes[bytes_idx] = payload[bytes_idx - 1];
         bytes_idx += 1;
-        payload_idx = payload_idx.wrapping_sub(1);
     }
     bytes
 }
