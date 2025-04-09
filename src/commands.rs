@@ -75,6 +75,7 @@ pub struct WRegister<R>(
 ///
 /// ## Example
 /// ```rust
+/// #![feature(generic_const_exprs)] // TODO: https://github.com/rust-lang/rust/issues/133199#issuecomment-2630615573
 /// use nrf24l01_commands::commands;
 ///
 /// // Generate SPI byte sequence for R_RX_PAYLOAD with 17 byte payload.

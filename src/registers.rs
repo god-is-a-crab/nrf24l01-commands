@@ -808,7 +808,7 @@ impl<const N: usize> RxAddrP0<N> {
 
     /// Convert into bytes ordered by LSByte first.
     pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
+        address_into_bytes(self.0.0)
     }
 }
 
@@ -897,7 +897,7 @@ impl<const N: usize> RxAddrP1<N> {
 
     /// Convert into bytes ordered by LSByte first.
     pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
+        address_into_bytes(self.0.0)
     }
 }
 
@@ -1118,7 +1118,7 @@ impl<const N: usize> TxAddr<N> {
 
     /// Convert into bytes ordered by LSByte first.
     pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
+        address_into_bytes(self.0.0)
     }
 }
 
