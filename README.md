@@ -4,6 +4,8 @@
 
 # nRF24L01 Commands
 
+The nRF24L01 is a wideband 2.4Ghz RF IC. It is controlled by commands sent over SPI.
+
 This crate provides:
 - Bitfield definitions for nRF24L01 registers
 - A friendly API for generating SPI byte sequences for nRF24L01 commands
