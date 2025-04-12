@@ -1,10 +1,10 @@
 [package]
 name = "nrf24l01-commands"
-version = "1.1.2"
-edition = "2021"
+version = "2.0.0"
+edition = "2024"
 authors = ["Jingwei Ni <ni.jingwei.2210@gmail.com>"]
-description = "Register bitfields and commands for the nRF24L01."
-keywords = ["nrf24l01"]
+description = "Register bitfields and commands for the nRF24L01+."
+keywords = ["nrf24l01+", "nrf24l01p", "nrf24l01plus", "nrf24l01", "spi"]
 categories = ["embedded", "no-std", "hardware-support"]
 license = "MIT"
 repository = "https://github.com/god-is-a-crab/nrf24l01-commands"
@@ -13,4 +13,4 @@ readme = "README.md"
 exclude = [".github"]
 
 [dependencies]
-bitfield-struct = "0.9.2"
+bitfield-struct = "0.10.1"

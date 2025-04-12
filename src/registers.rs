@@ -1,8 +1,8 @@
-//! Register bitfields for the nRF24L01.
+//! Register bitfields for the nRF24L01+.
 //!
 //! ## Example with the CONFIG register
 //! ```rust
-//! use nrf24l01_commands::registers;
+//! use nrf24l01_commands::{fields, registers};
 //!
 //! // Default value
 //! let reg = registers::Config::new();
@@ -14,7 +14,7 @@
 //! assert!(!reg.mask_tx_ds());
 //! assert!(!reg.mask_max_rt());
 //! assert!(!reg.en_crc());
-//! assert!(reg.crco());
+//! assert_eq!(reg.crco(), fields::Crco::TwoByte);
 //! assert!(reg.pwr_up());
 //! assert!(!reg.prim_rx());
 //!
@@ -24,17 +24,39 @@
 //!     .with_mask_tx_ds(false)
 //!     .with_mask_max_rt(false)
 //!     .with_en_crc(false)
-//!     .with_crco(true)
+//!     .with_crco(fields::Crco::TwoByte)
 //!     .with_pwr_up(true)
 //!     .with_prim_rx(false);
 //! assert_eq!(reg.into_bits(), 0b0100_0110);
 //! ```
+use crate::fields::{self, EnumField};
 use bitfield_struct::bitfield;
 
-/// A trait for nRF24L01 registers. Defines the register's address.
-pub trait Register {
+/// A trait for nRF24L01+ registers.
+#[const_trait]
+pub trait Register: Copy {
     /// Register address.
     const ADDRESS: u8;
+    /// Convert register to bits.
+    fn into_bits(self) -> u8;
+}
+
+/// A trait for nRF24L01+ address registers which can be 3-5 bytes.
+/// - RxAddrP0
+/// - RxAddrP1
+/// - TxAddr
+#[const_trait]
+pub trait AddressRegister<const N: usize>: Copy {
+    /// Register address.
+    const ADDRESS: u8;
+    /// Creates a new default initialized bitfield.
+    fn new() -> Self;
+    /// Convert from bits.
+    fn from_bits(bits: u64) -> Self;
+    /// Convert into bits.
+    fn into_bits(self) -> u64;
+    /// Convert into bytes ordered by LSByte first.
+    fn into_bytes(self) -> [u8; N];
 }
 
 /// # CONFIG register
@@ -68,11 +90,7 @@ pub trait Register {
 /// Enable/disable CRC. Default value: `1` (enabled)
 ///
 /// #### `crco` | bit 2
-/// CRC encoding scheme.
-///
-/// `0`: 1 byte
-///
-/// `1`: 2 byte
+/// CRC encoding scheme. Enum: [`Crco`](crate::fields::Crco).
 ///
 /// #### `pwr_up` | bit 1
 /// Power down/up.
@@ -90,7 +108,7 @@ pub trait Register {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{fields, registers};
 ///
 /// // Default value
 /// let reg = registers::Config::new();
@@ -102,7 +120,7 @@ pub trait Register {
 ///     .with_mask_tx_ds(false)
 ///     .with_mask_max_rt(false)
 ///     .with_en_crc(false)
-///     .with_crco(true)
+///     .with_crco(fields::Crco::TwoByte)
 ///     .with_pwr_up(true)
 ///     .with_prim_rx(false);
 /// assert_eq!(reg.into_bits(), 0b0100_0110);
@@ -140,13 +158,9 @@ pub struct Config {
     #[bits(1, default = true)]
     pub en_crc: bool,
 
-    /// CRC encoding scheme.
-    ///
-    /// `0`: 1 byte
-    ///
-    /// `1`: 2 byte
+    /// CRC encoding scheme. Enum: [`Crco`](crate::fields::Crco).
     #[bits(1)]
-    pub crco: bool,
+    pub crco: fields::Crco,
 
     /// Power down/up.
     ///
@@ -165,8 +179,12 @@ pub struct Config {
     pub prim_rx: bool,
 }
 
-impl Register for Config {
+impl const Register for Config {
     const ADDRESS: u8 = 0x00;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # EN_AA register
@@ -222,8 +240,12 @@ pub struct EnAa {
     pub enaa_p0: bool,
 }
 
-impl Register for EnAa {
+impl const Register for EnAa {
     const ADDRESS: u8 = 0x01;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # EN_RXADDR register
@@ -280,8 +302,12 @@ pub struct EnRxaddr {
     pub erx_p0: bool,
 }
 
-impl Register for EnRxaddr {
+impl const Register for EnRxaddr {
     const ADDRESS: u8 = 0x02;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # SETUP_AW register
@@ -293,25 +319,18 @@ impl Register for EnRxaddr {
 ///
 /// #### `aw` | bits 1:0
 /// Address width. Default value: `11` (5 byte address).
-///
-/// `00`: Illegal
-///
-/// `01`: 3 bytes
-///
-/// `10`: 4 bytes
-///
-/// `11`: 5 bytes
+/// Enum: [`AddressWidth`](crate::fields::AddressWidth).
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{fields, registers};
 ///
 /// // Default value
 /// let reg = registers::SetupAw::new();
 /// assert_eq!(reg.into_bits(), 0b0000_0011);
 ///
 /// // Write fields
-/// let reg = registers::SetupAw::new().with_aw(0b10);
+/// let reg = registers::SetupAw::new().with_aw(fields::AddressWidth::FourByte);
 /// assert_eq!(reg.into_bits(), 0b0000_0010);
 /// ```
 #[bitfield(u8, order = Msb)]
@@ -320,20 +339,17 @@ pub struct SetupAw {
     __: u8,
 
     /// Address width. Default value: `11` (5 byte address).
-    ///
-    /// `00`: Illegal
-    ///
-    /// `01`: 3 bytes
-    ///
-    /// `10`: 4 bytes
-    ///
-    /// `11`: 5 bytes
-    #[bits(2, default = 3)]
-    pub aw: u8,
+    /// Enum: [`AddressWidth`](crate::fields::AddressWidth).
+    #[bits(2, default = fields::AddressWidth::FiveByte)]
+    pub aw: fields::AddressWidth,
 }
 
-impl Register for SetupAw {
+impl const Register for SetupAw {
     const ADDRESS: u8 = 0x03;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # SETUP_RETR register
@@ -344,17 +360,7 @@ impl Register for SetupAw {
 /// ## Fields
 ///
 /// #### `ard` | bits 7:4
-/// Auto retransmit delay.
-///
-/// `0000`: Wait 250µS
-///
-/// `0001`: Wait 500µS
-///
-/// `0010`: Wait 750µS
-///
-/// ……
-///
-/// `1111`: Wait 4000µS
+/// Auto retransmit delay. Enum: [`AutoRetransmitDelay`](crate::fields::AutoRetransmitDelay).
 ///
 /// #### `arc` | bits 3:0
 /// Maximum auto retransmits. Default value: `0011` (3 retransmits)
@@ -371,7 +377,7 @@ impl Register for SetupAw {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{fields, registers};
 ///
 /// // Default value
 /// let reg = registers::SetupRetr::new();
@@ -379,25 +385,15 @@ impl Register for SetupAw {
 ///
 /// // Write fields
 /// let reg = registers::SetupRetr::new()
-///     .with_ard(0b10)
+///     .with_ard(fields::AutoRetransmitDelay::US750)
 ///     .with_arc(0b1111);
 /// assert_eq!(reg.into_bits(), 0b0010_1111);
 /// ```
 #[bitfield(u8, order = Msb)]
 pub struct SetupRetr {
-    /// Auto retransmit delay.
-    ///
-    /// `0000`: Wait 250µS
-    ///
-    /// `0001`: Wait 500µS
-    ///
-    /// `0010`: Wait 750µS
-    ///
-    /// ……
-    ///
-    /// `1111`: Wait 4000µS
+    /// Auto retransmit delay. Enum: [`AutoRetransmitDelay`](crate::fields::AutoRetransmitDelay).
     #[bits(4)]
-    pub ard: u8,
+    pub ard: fields::AutoRetransmitDelay,
 
     /// Maximum auto retransmits. Default value: `0011` (3 retransmits)
     ///
@@ -414,8 +410,12 @@ pub struct SetupRetr {
     pub arc: u8,
 }
 
-impl Register for SetupRetr {
+impl const Register for SetupRetr {
     const ADDRESS: u8 = 0x04;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RF_CH register
@@ -449,100 +449,115 @@ pub struct RfCh {
     pub rf_ch: u8,
 }
 
-impl Register for RfCh {
+impl const Register for RfCh {
     const ADDRESS: u8 = 0x05;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RF_SETUP register
-/// Set RF air data rate, output power and LNA gain.
+/// Set RF air data rate and output power.
 ///
 /// Address = `0x06`
 ///
 /// ## Fields
+/// #### `cont_wave` | bit 7
+/// Enables continuous carrier transmit.
+///
+/// #### `rf_dr_low` | bit 5
+/// Set RF data rate to 250kbps. See `rf_dr_high`.
+///
 /// #### `pll_lock` | bit 4
 /// Force PLL lock signal. Only used in test.
 ///
-/// #### `rf_dr` | bit 3
-/// Air data rate. Default value: `1` (2 Mbps)
+/// #### `rf_dr_high` | bit 3
+/// Select between the high speed data rates. This bit
+/// is don’t care if `rf_dr_low` is set. Enum: [`RfDrHigh`](crate::fields::RfDrHigh).
+/// Default value: `1` (2 Mbps).
 ///
-/// `0`: 1 Mbps
+/// Encoding [RF_DR_LOW, RF_DR_HIGH]:
 ///
-/// `1`: 2 Mbps
+/// `00` - 1Mbps
+///
+/// `01` - 2Mbps
+///
+/// `10` - 250kbps
+///
+/// `11` - Reserved
 ///
 /// #### `rf_pwr` | bits 2:1
-/// RF output power in TX mode. Default value: `11` (0 dBm)
-///
-/// `00`: -18 dBm
-///
-/// `01`: -12 dBm
-///
-/// `10`: -6 dBm
-///
-/// `11`: 0 dbm
-///
-/// #### `lna_hcurr` | bit 0
-/// Set LNA gain. Default value: `1` (higher gain).
-///
-/// `0`: lower gain and current consumption
-///
-/// `1`: higher gain and current consumption
+/// RF output power in TX mode. Enum: [`RfPower`](crate::fields::RfPower).
+/// Default value: `11` (0 dBm).
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{fields, registers};
 ///
 /// // Default value
 /// let reg = registers::RfSetup::new();
-/// assert_eq!(reg.into_bits(), 0b0000_1111);
+/// assert_eq!(reg.into_bits(), 0b0000_1110);
 ///
 /// // Write fields
 /// let reg = registers::RfSetup::new()
 ///     .with_pll_lock(false)
-///     .with_rf_dr(false)
-///     .with_rf_pwr(0b10)
-///     .with_lna_hcurr(true);
-/// assert_eq!(reg.into_bits(), 0b0000_0101);
+///     .with_rf_dr_low(true)
+///     .with_rf_dr_high(fields::RfDrHigh::Mbps1)
+///     .with_rf_pwr(fields::RfPower::Neg6Dbm);
+/// assert_eq!(reg.into_bits(), 0b0010_0100);
+///
+/// // Read fields
+/// assert_eq!(reg.rf_pwr(), fields::RfPower::Neg6Dbm);
 /// ```
 #[bitfield(u8, order = Msb)]
 pub struct RfSetup {
-    #[bits(3)]
-    __: u8,
+    /// Enables continuous carrier transmit.
+    #[bits(1)]
+    pub cont_wave: bool,
+
+    #[bits(1)]
+    __: bool,
+
+    /// Set RF data rate to 250kbps. See `rf_dr_high`.
+    #[bits(1)]
+    pub rf_dr_low: bool,
 
     /// Force PLL lock signal. Only used in test.
     #[bits(1)]
     pub pll_lock: bool,
 
-    /// Air data rate. Default value: `1` (2 Mbps)
+    /// Select between the high speed data rates. This bit
+    /// is don’t care if `rf_dr_low` is set. Enum: [`RfDrHigh`](crate::fields::RfDrHigh).
+    /// Default value: `1` (2 Mbps).
     ///
-    /// `0`: 1 Mbps
+    /// Encoding [RF_DR_LOW, RF_DR_HIGH]:
     ///
-    /// `1`: 2 Mbps
-    #[bits(1, default = true)]
-    pub rf_dr: bool,
+    /// `00` - 1Mbps
+    ///
+    /// `01` - 2Mbps
+    ///
+    /// `10` - 250kbps
+    ///
+    /// `11` - Reserved
+    #[bits(1, default = fields::RfDrHigh::Mbps2)]
+    pub rf_dr_high: fields::RfDrHigh,
 
-    /// RF output power in TX mode. Default value: `11` (0 dBm)
-    ///
-    /// `00`: -18 dBm
-    ///
-    /// `01`: -12 dBm
-    ///
-    /// `10`: -6 dBm
-    ///
-    /// `11`: 0 dbm
-    #[bits(2, default = 3)]
-    pub rf_pwr: u8,
+    /// RF output power in TX mode. Enum: [`RfPower`](crate::fields::RfPower).
+    /// Default value: `11` (0 dBm).
+    #[bits(2, default = fields::RfPower::Dbm0)]
+    pub rf_pwr: fields::RfPower,
 
-    /// Set LNA gain. Default value: `1` (higher gain).
-    ///
-    /// `0`: lower gain and current consumption
-    ///
-    /// `1`: higher gain and current consumption
-    #[bits(1, default = true)]
-    pub lna_hcurr: bool,
+    #[bits(1)]
+    __: bool,
 }
 
-impl Register for RfSetup {
+impl const Register for RfSetup {
     const ADDRESS: u8 = 0x06;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # STATUS register
@@ -561,12 +576,7 @@ impl Register for RfSetup {
 ///
 /// #### `rx_p_no` | bits 3:1
 /// Data pipe number for the payload available from reading RX FIFO. This field is read-only.
-///
-/// `000`-`101`: Data pipe number
-///
-/// `110`: Not used
-///
-/// `111`: RX FIFO empty
+/// Enum: [`RxPipeNo`](crate::fields::RxPipeNo).
 ///
 /// #### `tx_full` | bit 0
 /// TX FIFO full flag. This field is read-only.
@@ -577,7 +587,7 @@ impl Register for RfSetup {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{fields, registers};
 ///
 /// // Default value
 /// let reg = registers::Status::new();
@@ -588,7 +598,7 @@ impl Register for RfSetup {
 /// assert!(!reg.rx_dr());
 /// assert!(reg.tx_ds());
 /// assert!(reg.max_rt());
-/// assert_eq!(reg.rx_p_no(), 2);
+/// assert_eq!(reg.rx_p_no(), fields::RxPipeNo::Pipe2);
 /// assert!(reg.tx_full());
 ///
 /// // Write fields
@@ -616,14 +626,9 @@ pub struct Status {
     pub max_rt: bool,
 
     /// Data pipe number for the payload available from reading RX FIFO. This field is read-only.
-    ///
-    /// `000`-`101`: Data pipe number
-    ///
-    /// `110`: Not used
-    ///
-    /// `111`: RX FIFO empty
+    /// Enum: [`RxPipeNo`](crate::fields::RxPipeNo).
     #[bits(3, access = RO)]
-    pub rx_p_no: u8,
+    pub rx_p_no: fields::RxPipeNo,
 
     /// TX FIFO full flag. This field is read-only.
     ///
@@ -634,8 +639,12 @@ pub struct Status {
     pub tx_full: bool,
 }
 
-impl Register for Status {
+impl const Register for Status {
     const ADDRESS: u8 = 0x07;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # OBSERVE_TX register
@@ -679,40 +688,50 @@ pub struct ObserveTx {
     pub arc_cnt: u8,
 }
 
-impl Register for ObserveTx {
+impl const Register for ObserveTx {
     const ADDRESS: u8 = 0x08;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
-/// # CD register
-/// Carrier detect register.
+/// # RPD register
+/// Received power detector.
 ///
 /// Address = `0x09`
 ///
 /// ## Fields
-/// #### `cd` | bit 0
-/// Carrier detect. The carrier detect is a signal that is set high
-/// when an RF signal is detected inside the receiving frequency channel. This field is read-only.
+/// #### `rpd` | bit 0
+/// Triggers at received power levels above -64 dBm that are present
+/// in the RF channel you receive on. If the received power is less
+/// than -64 dBm, RDP = 0.
 ///
 /// ## Example
 /// ```rust
 /// use nrf24l01_commands::registers;
 ///
-/// let reg = registers::Cd::from_bits(1);
-/// assert!(reg.cd());
+/// let reg = registers::Rpd::from_bits(1);
+/// assert!(reg.rpd());
 /// ```
 #[bitfield(u8, order = Msb)]
-pub struct Cd {
+pub struct Rpd {
     #[bits(7)]
     __: u8,
 
-    /// Carrier detect. The carrier detect is a signal that is set high
-    /// when an RF signal is detected inside the receiving frequency channel. This field is read-only.
+    /// Triggers at received power levels above -64 dBm that are present
+    /// in the RF channel you receive on. If the received power is less
+    /// than -64 dBm, RDP = 0.
     #[bits(1, access = RO)]
-    pub cd: bool,
+    pub rpd: bool,
 }
 
-impl Register for Cd {
+impl const Register for Rpd {
     const ADDRESS: u8 = 0x09;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_ADDR_P0 register
@@ -731,7 +750,7 @@ impl Register for Cd {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::registers::{self, AddressRegister};
 ///
 /// // Default value
 /// let reg = registers::RxAddrP0::<4>::new();
@@ -761,10 +780,6 @@ struct RxAddrP0Fields {
     rx_addr_p0: u64,
 }
 
-impl<const N: usize> Register for RxAddrP0<N> {
-    const ADDRESS: u8 = 0x0A;
-}
-
 /// Convert u64 address to little-endian bytes.
 /// Const parameter `N`: address width in bytes. Constraint: `N` in {3, 4, 5}.
 #[inline(always)]
@@ -779,22 +794,27 @@ const fn address_into_bytes<const N: usize>(addr: u64) -> [u8; N] {
     bytes
 }
 
-impl<const N: usize> RxAddrP0<N> {
-    /// Creates a new default initialized bitfield.
-    pub const fn new() -> Self {
+impl<const N: usize> const AddressRegister<N> for RxAddrP0<N> {
+    const ADDRESS: u8 = 0x0A;
+
+    fn new() -> Self {
         Self(RxAddrP0Fields::new())
     }
 
-    /// Convert from bits.
-    pub const fn from_bits(bits: u64) -> Self {
+    fn from_bits(bits: u64) -> Self {
         Self(RxAddrP0Fields::from_bits(bits))
     }
 
-    /// Convert into bits.
-    pub const fn into_bits(self) -> u64 {
+    fn into_bits(self) -> u64 {
         self.0.into_bits()
     }
 
+    fn into_bytes(self) -> [u8; N] {
+        address_into_bytes(self.0.0)
+    }
+}
+
+impl<const N: usize> RxAddrP0<N> {
     /// RX address data pipe 0. Default value: `0xE7E7E7E7E7`.
     pub const fn rx_addr_p0(&self) -> u64 {
         self.0.rx_addr_p0()
@@ -804,11 +824,6 @@ impl<const N: usize> RxAddrP0<N> {
     pub const fn with_rx_addr_p0(mut self, value: u64) -> Self {
         self.0 = self.0.with_rx_addr_p0(value);
         self
-    }
-
-    /// Convert into bytes ordered by LSByte first.
-    pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
     }
 }
 
@@ -834,7 +849,7 @@ impl<const N: usize> Default for RxAddrP0<N> {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{registers, registers::AddressRegister};
 ///
 /// // Default value
 /// let reg = registers::RxAddrP1::<4>::new();
@@ -864,26 +879,27 @@ struct RxAddrP1Fields {
     rx_addr_p1: u64,
 }
 
-impl<const N: usize> Register for RxAddrP1<N> {
+impl<const N: usize> const AddressRegister<N> for RxAddrP1<N> {
     const ADDRESS: u8 = 0x0B;
-}
 
-impl<const N: usize> RxAddrP1<N> {
-    /// Creates a new default initialized bitfield.
-    pub const fn new() -> Self {
+    fn new() -> Self {
         Self(RxAddrP1Fields::new())
     }
 
-    /// Convert from bits.
-    pub const fn from_bits(bits: u64) -> Self {
+    fn from_bits(bits: u64) -> Self {
         Self(RxAddrP1Fields::from_bits(bits))
     }
 
-    /// Convert into bits.
-    pub const fn into_bits(self) -> u64 {
+    fn into_bits(self) -> u64 {
         self.0.into_bits()
     }
 
+    fn into_bytes(self) -> [u8; N] {
+        address_into_bytes(self.0.0)
+    }
+}
+
+impl<const N: usize> RxAddrP1<N> {
     /// RX address data pipe 1. Default value: `0xC2C2C2C2C2`.
     pub const fn rx_addr_p1(&self) -> u64 {
         self.0.rx_addr_p1()
@@ -893,11 +909,6 @@ impl<const N: usize> RxAddrP1<N> {
     pub const fn with_rx_addr_p1(mut self, value: u64) -> Self {
         self.0 = self.0.with_rx_addr_p1(value);
         self
-    }
-
-    /// Convert into bytes ordered by LSByte first.
-    pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
     }
 }
 
@@ -936,8 +947,12 @@ pub struct RxAddrP2 {
     pub rx_addr_p2: u8,
 }
 
-impl Register for RxAddrP2 {
+impl const Register for RxAddrP2 {
     const ADDRESS: u8 = 0x0C;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_ADDR_P3 register
@@ -969,8 +984,12 @@ pub struct RxAddrP3 {
     pub rx_addr_p3: u8,
 }
 
-impl Register for RxAddrP3 {
+impl const Register for RxAddrP3 {
     const ADDRESS: u8 = 0x0D;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_ADDR_P4 register
@@ -1002,8 +1021,12 @@ pub struct RxAddrP4 {
     pub rx_addr_p4: u8,
 }
 
-impl Register for RxAddrP4 {
+impl const Register for RxAddrP4 {
     const ADDRESS: u8 = 0x0E;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_ADDR_P5 register
@@ -1035,8 +1058,12 @@ pub struct RxAddrP5 {
     pub rx_addr_p5: u8,
 }
 
-impl Register for RxAddrP5 {
+impl const Register for RxAddrP5 {
     const ADDRESS: u8 = 0x0F;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # TX_ADDR register
@@ -1055,7 +1082,7 @@ impl Register for RxAddrP5 {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::registers;
+/// use nrf24l01_commands::{registers, registers::AddressRegister};
 ///
 /// // Default value
 /// let reg = registers::TxAddr::<4>::new();
@@ -1085,26 +1112,27 @@ struct TxAddrFields {
     tx_addr: u64,
 }
 
-impl<const N: usize> Register for TxAddr<N> {
+impl<const N: usize> const AddressRegister<N> for TxAddr<N> {
     const ADDRESS: u8 = 0x10;
-}
 
-impl<const N: usize> TxAddr<N> {
-    /// Creates a new default initialized bitfield.
-    pub const fn new() -> Self {
+    fn new() -> Self {
         Self(TxAddrFields::new())
     }
 
-    /// Convert from bits.
-    pub const fn from_bits(bits: u64) -> Self {
+    fn from_bits(bits: u64) -> Self {
         Self(TxAddrFields::from_bits(bits))
     }
 
-    /// Convert into bits.
-    pub const fn into_bits(self) -> u64 {
+    fn into_bits(self) -> u64 {
         self.0.into_bits()
     }
 
+    fn into_bytes(self) -> [u8; N] {
+        address_into_bytes(self.0.0)
+    }
+}
+
+impl<const N: usize> TxAddr<N> {
     /// TX address. Default value: `0xE7E7E7E7E7`.
     pub const fn tx_addr(&self) -> u64 {
         self.0.tx_addr()
@@ -1114,11 +1142,6 @@ impl<const N: usize> TxAddr<N> {
     pub const fn with_tx_addr(mut self, value: u64) -> Self {
         self.0 = self.0.with_tx_addr(value);
         self
-    }
-
-    /// Convert into bytes ordered by LSByte first.
-    pub const fn into_bytes(self) -> [u8; N] {
-        address_into_bytes(self.0 .0)
     }
 }
 
@@ -1135,7 +1158,7 @@ impl<const N: usize> Default for TxAddr<N> {
 ///
 /// ## Fields
 /// #### `rx_pw_p0` | bits 7:0
-/// RX payload width for data pipe 0. 1 - 32 bytes.
+/// RX payload width for data pipe 0. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1154,13 +1177,17 @@ pub struct RxPwP0 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 0. 1 - 32 bytes.
+    /// RX payload width for data pipe 0. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p0: u8,
 }
 
-impl Register for RxPwP0 {
+impl const Register for RxPwP0 {
     const ADDRESS: u8 = 0x11;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_PW_P1 register
@@ -1170,7 +1197,7 @@ impl Register for RxPwP0 {
 ///
 /// ## Fields
 /// #### `rx_pw_p1` | bits 7:0
-/// RX payload width for data pipe 1. 1 - 32 bytes.
+/// RX payload width for data pipe 1. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1189,13 +1216,17 @@ pub struct RxPwP1 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 1. 1 - 32 bytes.
+    /// RX payload width for data pipe 1. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p1: u8,
 }
 
-impl Register for RxPwP1 {
+impl const Register for RxPwP1 {
     const ADDRESS: u8 = 0x12;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_PW_P2 register
@@ -1205,7 +1236,7 @@ impl Register for RxPwP1 {
 ///
 /// ## Fields
 /// #### `rx_pw_p2` | bits 7:0
-/// RX payload width for data pipe 2. 1 - 32 bytes.
+/// RX payload width for data pipe 2. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1224,13 +1255,17 @@ pub struct RxPwP2 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 2. 1 - 32 bytes.
+    /// RX payload width for data pipe 2. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p2: u8,
 }
 
-impl Register for RxPwP2 {
+impl const Register for RxPwP2 {
     const ADDRESS: u8 = 0x13;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_PW_P3 register
@@ -1240,7 +1275,7 @@ impl Register for RxPwP2 {
 ///
 /// ## Fields
 /// #### `rx_pw_p3` | bits 7:0
-/// RX payload width for data pipe 3. 1 - 32 bytes.
+/// RX payload width for data pipe 3. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1259,13 +1294,17 @@ pub struct RxPwP3 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 3. 1 - 32 bytes.
+    /// RX payload width for data pipe 3. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p3: u8,
 }
 
-impl Register for RxPwP3 {
+impl const Register for RxPwP3 {
     const ADDRESS: u8 = 0x14;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_PW_P4 register
@@ -1275,7 +1314,7 @@ impl Register for RxPwP3 {
 ///
 /// ## Fields
 /// #### `rx_pw_p4` | bits 7:0
-/// RX payload width for data pipe 4. 1 - 32 bytes.
+/// RX payload width for data pipe 4. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1294,13 +1333,17 @@ pub struct RxPwP4 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 4. 1 - 32 bytes.
+    /// RX payload width for data pipe 4. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p4: u8,
 }
 
-impl Register for RxPwP4 {
+impl const Register for RxPwP4 {
     const ADDRESS: u8 = 0x15;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # RX_PW_P5 register
@@ -1310,7 +1353,7 @@ impl Register for RxPwP4 {
 ///
 /// ## Fields
 /// #### `rx_pw_p5` | bits 7:0
-/// RX payload width for data pipe 5. 1 - 32 bytes.
+/// RX payload width for data pipe 5. 1 - 32 bytes. `0` = pipe not used.
 ///
 /// ## Example
 /// ```rust
@@ -1329,13 +1372,17 @@ pub struct RxPwP5 {
     #[bits(2)]
     __: u8,
 
-    /// RX payload width for data pipe 5. 1 - 32 bytes.
+    /// RX payload width for data pipe 5. 1 - 32 bytes. `0` = pipe not used.
     #[bits(6)]
     pub rx_pw_p5: u8,
 }
 
-impl Register for RxPwP5 {
+impl const Register for RxPwP5 {
     const ADDRESS: u8 = 0x16;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # FIFO_STATUS register
@@ -1412,8 +1459,12 @@ pub struct FifoStatus {
     pub rx_empty: bool,
 }
 
-impl Register for FifoStatus {
+impl const Register for FifoStatus {
     const ADDRESS: u8 = 0x17;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # DYNPD register
@@ -1450,33 +1501,41 @@ pub struct Dynpd {
     __: u8,
 
     /// Enable dynamic payload length for data pipe 5.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p5` in [`EnAa`].
     #[bits(1)]
     pub dpl_p5: bool,
     /// Enable dynamic payload length for data pipe 4.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p4` in [`EnAa`].
     #[bits(1)]
     pub dpl_p4: bool,
     /// Enable dynamic payload length for data pipe 3.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p3` in [`EnAa`].
     #[bits(1)]
     pub dpl_p3: bool,
     /// Enable dynamic payload length for data pipe 2.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p2` in [`EnAa`].
     #[bits(1)]
     pub dpl_p2: bool,
     /// Enable dynamic payload length for data pipe 1.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p1` in [`EnAa`].
     #[bits(1)]
     pub dpl_p1: bool,
     /// Enable dynamic payload length for data pipe 0.
+    /// Requires `en_dpl` in [`Feature`] and `enaa_p0` in [`EnAa`].
     #[bits(1)]
     pub dpl_p0: bool,
 }
 
-impl Register for Dynpd {
+impl const Register for Dynpd {
     const ADDRESS: u8 = 0x1C;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }
 
 /// # FEATURE register
-/// Enable features 'Dynamic Payload Length', 'Payload with ACK' and 'W_TX_PAYLOAD_NO_ACK' command.
-/// To activate this register, use the ACTIVATE command.
-/// To deactivate this register, use the ACTIVATE command again.
+/// Enable features _Dynamic Payload Length_, _Payload with ACK_ and `W_TX_PAYLOAD_NO_ACK` command.
 ///
 /// Address = `0x01D`
 ///
@@ -1488,7 +1547,7 @@ impl Register for Dynpd {
 /// Enables _Payload with ACK_.
 ///
 /// #### `en_dyn_ack` | bit 0
-/// Enables 'W_TX_PAYLOAD_NO_ACK' command.
+/// Enables `W_TX_PAYLOAD_NO_ACK` command.
 ///
 /// ## Example
 /// ```rust
@@ -1523,6 +1582,10 @@ pub struct Feature {
     pub en_dyn_ack: bool,
 }
 
-impl Register for Feature {
+impl const Register for Feature {
     const ADDRESS: u8 = 0x1D;
+
+    fn into_bits(self) -> u8 {
+        self.into_bits()
+    }
 }

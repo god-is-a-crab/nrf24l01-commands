@@ -1,25 +1,26 @@
-//! Generate SPI byte sequences for nRF24L01 commands.
+//! Generate SPI byte sequences for nRF24L01+ commands.
 //!
 //! ## Example with writing the [`CONFIG`][registers::Config] register
 //! ```rust
-//! use nrf24l01_commands::{registers, commands};
+//! use nrf24l01_commands::{commands, fields, registers, registers::AddressRegister};
 //!
 //! let config = registers::Config::new()
 //!     .with_mask_rx_dr(true)
 //!     .with_mask_tx_ds(false)
 //!     .with_mask_max_rt(false)
 //!     .with_en_crc(false)
-//!     .with_crco(true)
+//!     .with_crco(fields::Crco::TwoByte)
 //!     .with_pwr_up(true)
 //!     .with_prim_rx(false);
 //! let write_command = commands::WRegister(config);
 //! let spi_bytes = write_command.bytes();
 //! assert_eq!(spi_bytes, [0b0010_0000, 0b0100_0110]);
 //! ```
-use crate::registers::{self, Register};
+use crate::registers::{self, AddressRegister, Register};
 use core::marker::PhantomData;
 
-/// A trait for nRF24L01 commands. Defines the command's _command word_.
+/// A trait for nRF24L01+ commands. Defines the command's _command word_.
+#[const_trait]
 pub trait Command {
     /// Command word.
     const WORD: u8;
@@ -33,7 +34,7 @@ pub trait Command {
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::{registers, commands};
+/// use nrf24l01_commands::{registers, registers::AddressRegister, commands};
 ///
 /// // Generate SPI byte sequence for R_REGISTER on FIFO_STATUS register.
 /// let bytes = commands::RRegister::<registers::FifoStatus>::bytes();
@@ -46,7 +47,7 @@ pub struct RRegister<R>(PhantomData<R>);
 ///
 /// ## Example
 /// ```rust
-/// use nrf24l01_commands::{registers, commands};
+/// use nrf24l01_commands::{registers, registers::AddressRegister, commands};
 ///
 /// // Generate SPI byte sequence for W_REGISTER on RF_CH register.
 /// let rf_ch = registers::RfCh::new().with_rf_ch(85);
@@ -75,6 +76,7 @@ pub struct WRegister<R>(
 ///
 /// ## Example
 /// ```rust
+/// #![feature(generic_const_exprs)] // TODO: https://github.com/rust-lang/rust/issues/133199#issuecomment-2630615573
 /// use nrf24l01_commands::commands;
 ///
 /// // Generate SPI byte sequence for R_RX_PAYLOAD with 17 byte payload.
@@ -141,18 +143,6 @@ pub struct FlushRx();
 /// assert_eq!(commands::ReuseTxPl::bytes(), [0b1110_0011]);
 /// ```
 pub struct ReuseTxPl();
-
-/// # ACTIVATE command
-/// Activates the [`FEATURE`][registers::Feature] register.
-///
-/// ## Example
-/// ```rust
-/// use nrf24l01_commands::commands;
-///
-/// let bytes = commands::Activate::bytes();
-/// assert_eq!(bytes, [0b0101_0000, 0x73]);
-/// ```
-pub struct Activate();
 
 /// # R_RX_PL_WID command
 /// Read RX payload width for the top payload in RX FIFO.
@@ -221,155 +211,44 @@ pub struct WTxPayloadNoack<const N: usize>(
 /// ```
 pub struct Nop();
 
-impl<R> Command for RRegister<R> {
+impl<R> const Command for RRegister<R> {
     const WORD: u8 = 0;
 }
-impl<R> Command for WRegister<R> {
+impl<R> const Command for WRegister<R> {
     const WORD: u8 = 0b0010_0000;
 }
-impl<const N: usize> Command for RRxPayload<N> {
+impl<const N: usize> const Command for RRxPayload<N> {
     const WORD: u8 = 0b0110_0001;
 }
-impl<const N: usize> Command for WTxPayload<N> {
+impl<const N: usize> const Command for WTxPayload<N> {
     const WORD: u8 = 0b1010_0000;
 }
-impl Command for FlushTx {
+impl const Command for FlushTx {
     const WORD: u8 = 0b1110_0001;
 }
-impl Command for FlushRx {
+impl const Command for FlushRx {
     const WORD: u8 = 0b1110_0010;
 }
-impl Command for ReuseTxPl {
+impl const Command for ReuseTxPl {
     const WORD: u8 = 0b1110_0011;
 }
-impl Command for Activate {
-    const WORD: u8 = 0b0101_0000;
-}
-impl Command for RRxPlWid {
+impl const Command for RRxPlWid {
     const WORD: u8 = 0b0110_0000;
 }
-impl<const N: usize> Command for WAckPayload<N> {
+impl<const N: usize> const Command for WAckPayload<N> {
     const WORD: u8 = 0b1010_1000;
 }
-impl<const N: usize> Command for WTxPayloadNoack<N> {
+impl<const N: usize> const Command for WTxPayloadNoack<N> {
     const WORD: u8 = 0b1011_0000;
 }
-impl Command for Nop {
+impl const Command for Nop {
     const WORD: u8 = 0b1111_1111;
 }
 
-impl RRegister<registers::Config> {
+impl<R: const Register> RRegister<R> {
     /// Get the command's _command word_.
     pub const fn word() -> u8 {
-        Self::WORD | registers::Config::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::EnAa> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::EnAa::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::EnRxaddr> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::EnRxaddr::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::SetupAw> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::SetupAw::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::SetupRetr> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::SetupRetr::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RfCh> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RfCh::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RfSetup> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RfSetup::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::Status> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Status::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::ObserveTx> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::ObserveTx::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::Cd> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Cd::ADDRESS
+        Self::WORD | R::ADDRESS
     }
 
     /// Generate the command's SPI byte sequence.
@@ -406,54 +285,6 @@ impl<const N: usize> RRegister<registers::RxAddrP1<N>> {
     }
 }
 
-impl RRegister<registers::RxAddrP2> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP2::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxAddrP3> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP3::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxAddrP4> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP4::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxAddrP5> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP5::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
 impl<const N: usize> RRegister<registers::TxAddr<N>> {
     /// Get the command's _command word_.
     pub const fn word() -> u8 {
@@ -468,226 +299,10 @@ impl<const N: usize> RRegister<registers::TxAddr<N>> {
     }
 }
 
-impl RRegister<registers::RxPwP0> {
+impl<R: const Register> WRegister<R> {
     /// Get the command's _command word_.
     pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP0::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxPwP1> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP1::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxPwP2> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP2::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxPwP3> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP3::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxPwP4> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP4::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::RxPwP5> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP5::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::FifoStatus> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::FifoStatus::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::Dynpd> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Dynpd::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl RRegister<registers::Feature> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Feature::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::word(), 0]
-    }
-}
-
-impl WRegister<registers::Config> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Config::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::EnAa> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::EnAa::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::EnRxaddr> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::EnRxaddr::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::SetupAw> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::SetupAw::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::SetupRetr> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::SetupRetr::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RfCh> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RfCh::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RfSetup> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RfSetup::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::Status> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Status::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::ObserveTx> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::ObserveTx::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::Cd> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Cd::ADDRESS
+        Self::WORD | R::ADDRESS
     }
 
     /// Generate the command's SPI byte sequence.
@@ -734,54 +349,6 @@ impl<const N: usize> WRegister<registers::RxAddrP1<N>> {
     }
 }
 
-impl WRegister<registers::RxAddrP2> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP2::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxAddrP3> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP3::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxAddrP4> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP4::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxAddrP5> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxAddrP5::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
 impl<const N: usize> WRegister<registers::TxAddr<N>> {
     /// Get the command's _command word_.
     pub const fn word() -> u8 {
@@ -791,114 +358,6 @@ impl<const N: usize> WRegister<registers::TxAddr<N>> {
     /// Generate the command's SPI byte sequence.
     pub const fn bytes(&self) -> [u8; N + 1] {
         concat_word_addr(Self::word(), self.0.into_bytes())
-    }
-}
-
-impl WRegister<registers::RxPwP0> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP0::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxPwP1> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP1::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxPwP2> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP2::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxPwP3> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP3::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxPwP4> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP4::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::RxPwP5> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::RxPwP5::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::FifoStatus> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::FifoStatus::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::Dynpd> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Dynpd::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
-    }
-}
-
-impl WRegister<registers::Feature> {
-    /// Get the command's _command word_.
-    pub const fn word() -> u8 {
-        Self::WORD | registers::Feature::ADDRESS
-    }
-
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes(&self) -> [u8; 2] {
-        [Self::word(), self.0.into_bits()]
     }
 }
 
@@ -953,13 +412,6 @@ impl ReuseTxPl {
     }
 }
 
-impl Activate {
-    /// Generate the command's SPI byte sequence.
-    pub const fn bytes() -> [u8; 2] {
-        [Self::WORD, 0x73]
-    }
-}
-
 impl RRxPlWid {
     /// Generate the command's SPI byte sequence.
     pub const fn bytes() -> [u8; 2] {
@@ -985,5 +437,47 @@ impl Nop {
     /// Generate the command's SPI byte sequence.
     pub const fn bytes() -> [u8; 1] {
         [Self::WORD]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::registers;
+
+    #[test]
+    fn test_read_address_registers() {
+        const READ_RX_ADDR_P0_BYTES: [u8; 5] = RRegister::<registers::RxAddrP0<4>>::bytes();
+        assert_eq!(READ_RX_ADDR_P0_BYTES, [0x0A, 0, 0, 0, 0]);
+
+        const READ_RX_ADDR_P1_BYTES: [u8; 4] = RRegister::<registers::RxAddrP1<3>>::bytes();
+        assert_eq!(READ_RX_ADDR_P1_BYTES, [0x0B, 0, 0, 0]);
+
+        const READ_TX_ADDR_BYTES: [u8; 6] = RRegister::<registers::TxAddr<5>>::bytes();
+        assert_eq!(READ_TX_ADDR_BYTES, [0x10, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_write_address_registers() {
+        const RX_ADDR_P0: registers::RxAddrP0<5> =
+            registers::RxAddrP0::<5>::new().with_rx_addr_p0(0x8106310AC0);
+        const RX_ADDR_P0_BYTES: [u8; 6] = WRegister(RX_ADDR_P0).bytes();
+        assert_eq!(
+            RX_ADDR_P0_BYTES,
+            [0b0010_0000 | 0x0A, 0xC0, 0x0A, 0x31, 0x06, 0x81]
+        );
+
+        const RX_ADDR_P1: registers::RxAddrP1<4> =
+            registers::RxAddrP1::<4>::new().with_rx_addr_p1(0x605F4459BF);
+        const RX_ADDR_P1_BYTES: [u8; 5] = WRegister(RX_ADDR_P1).bytes();
+        assert_eq!(
+            RX_ADDR_P1_BYTES,
+            [0b0010_0000 | 0x0B, 0xBF, 0x59, 0x44, 0x5F]
+        );
+
+        const TX_ADDR: registers::TxAddr<3> =
+            registers::TxAddr::<3>::new().with_tx_addr(0xFF32C8ED07);
+        const TX_ADDR_BYTES: [u8; 4] = WRegister(TX_ADDR).bytes();
+        assert_eq!(TX_ADDR_BYTES, [0b0010_0000 | 0x10, 0x07, 0xED, 0xC8]);
     }
 }

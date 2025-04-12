@@ -2,24 +2,28 @@
 [![Documentation](https://docs.rs/nrf24l01-commands/badge.svg)](https://docs.rs/nrf24l01-commands)
 [![Github Actions](https://github.com/god-is-a-crab/nrf24l01-commands/workflows/Rust/badge.svg)](https://github.com/god-is-a-crab/nrf24l01-commands/actions)
 
-# nRF24L01 Commands
+# nRF24L01+ Commands
+
+The nRF24L01+ is a wideband 2.4Ghz transceiver IC. It is controlled by commands sent over SPI.
 
 This crate provides:
-- Bitfield definitions for nRF24L01 registers
-- A friendly API for generating SPI byte sequences for nRF24L01 commands
+- Bitfield definitions for nRF24L01+ registers
+- A friendly API for generating SPI byte sequences for nRF24L01+ commands
+
+This crate is based on the [nRF24L01+ specification](https://docs.nordicsemi.com/bundle/nRF24L01P_PS_v1.0/resource/nRF24L01P_PS_v1.0.pdf) document.
 
 ## Examples
 
 ### Command to write CONFIG register
 ```rust
-use nrf24l01_commands::{registers, commands};
+use nrf24l01_commands::{commands, fields, registers};
 
 const CONFIG: registers::Config = registers::Config::new()
     .with_mask_rx_dr(true)
     .with_mask_tx_ds(false)
     .with_mask_max_rt(false)
     .with_en_crc(false)
-    .with_crco(true)
+    .with_crco(fields::Crco::TwoByte)
     .with_pwr_up(true)
     .with_prim_rx(false);
 const WRITE_COMMAND: commands::WRegister<registers::Config> = commands::WRegister(CONFIG);

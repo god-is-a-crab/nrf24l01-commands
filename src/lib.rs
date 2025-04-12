@@ -5,14 +5,16 @@
 #![no_std]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(const_trait_impl)]
 #![doc = include_str!("../README.md")]
 
 pub mod commands;
+pub mod fields;
 pub mod registers;
 
 #[cfg(test)]
 mod tests {
-    use super::{commands, registers};
+    use super::{commands, fields, registers, registers::AddressRegister};
 
     #[test]
     fn test_reg_config() {
@@ -21,7 +23,7 @@ mod tests {
         assert_eq!(reg.into_bits(), 0b0000_1000);
         // Check fields
         let reg = reg
-            .with_crco(true)
+            .with_crco(fields::Crco::TwoByte)
             .with_en_crc(false)
             .with_mask_max_rt(true)
             .with_mask_tx_ds(true)
@@ -59,7 +61,7 @@ mod tests {
         // Check fields
         let mut reg = registers::Status::from_bits(0b0010_0110);
         assert!(!reg.tx_full());
-        assert_eq!(reg.rx_p_no(), 0b011);
+        assert_eq!(reg.rx_p_no(), fields::RxPipeNo::Pipe3);
         assert!(!reg.max_rt());
         assert!(reg.tx_ds());
         assert!(!reg.rx_dr());
@@ -77,13 +79,13 @@ mod tests {
     #[test]
     fn test_reg_cd() {
         // Check default
-        let reg = registers::Cd::new();
+        let reg = registers::Rpd::new();
         assert_eq!(reg.into_bits(), 0);
         // Check fields
-        let reg = registers::Cd::from_bits(1);
+        let reg = registers::Rpd::from_bits(1);
         assert_eq!(reg.into_bits(), 1);
         // Check read command
-        let read_reg = commands::RRegister::<registers::Cd>::bytes();
+        let read_reg = commands::RRegister::<registers::Rpd>::bytes();
         assert_eq!(read_reg, [0 | 0x09, 0]);
     }
 
