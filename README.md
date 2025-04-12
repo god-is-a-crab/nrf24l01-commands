@@ -49,3 +49,16 @@ const PAYLOAD: [u8; 9] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const SPI_BYTES: [u8; 10] = commands::WTxPayload(PAYLOAD).bytes();
 assert_eq!(SPI_BYTES, [0b1010_0000, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 ```
+
+### Inspect register fields
+```rust
+use nrf24l01_commands::{fields, registers};
+
+const RF_SETUP: registers::RfSetup = registers::RfSetup::from_bits(0b0010_0010);
+// Inspect fields
+assert!(!RF_SETUP.cont_wave());
+assert!(RF_SETUP.rf_dr_low());
+assert!(!RF_SETUP.pll_lock());
+assert_eq!(RF_SETUP.rf_dr_high(), fields::RfDrHigh::Mbps1);
+assert_eq!(RF_SETUP.rf_pwr(), fields::RfPower::Neg12Dbm);
+```
